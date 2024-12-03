@@ -8,11 +8,14 @@ import { pipeline } from 'node:stream/promises';
 import { useLogger } from '../../../logger/index.js';
 import { getSharpInstance } from '../lib/get-sharp-instance.js';
 import { parseIptc, parseXmp } from './parse-image-metadata.js';
+import { rgbaToThumbHash } from 'thumbhash';
 
 const env = useEnv();
 const logger = useLogger();
 
-export type Metadata = Partial<Pick<File, 'height' | 'width' | 'description' | 'title' | 'tags' | 'metadata'>>;
+export type Metadata = Partial<
+	Pick<File, 'height' | 'width' | 'description' | 'title' | 'tags' | 'metadata' | 'thumbhash'>
+>;
 
 export async function getMetadata(
 	stream: Readable,
@@ -135,7 +138,24 @@ export async function getMetadata(
 					}
 				}
 
-				resolve(metadata);
+				try {
+					const { info, data } = await transformer
+						.resize(100, 100, {
+							fit: 'inside',
+							withoutEnlargement: true,
+						})
+						.raw()
+						.toBuffer({ resolveWithObject: true });
+
+					const rawHash = rgbaToThumbHash(info.width, info.height, data);
+					const hashedBuffer = Buffer.from(rawHash);
+					const thumbhash = hashedBuffer.toString('binary');
+					metadata.thumbhash = thumbhash;
+				} catch (error) {
+					logger.error('Failed to generate thumbhash', error);
+				} finally {
+					resolve(metadata);
+				}
 			}),
 		);
 	});
