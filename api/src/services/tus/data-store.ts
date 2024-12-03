@@ -197,7 +197,9 @@ export class TusDataStore extends DataStore {
 					}
 
 					// Upgrade the temp file to the final filename
-					await this.storageDriver.move(filePath, replaceData.filename_disk);
+					if (replaceData.filename_disk) {
+						await this.storageDriver.move(filePath, replaceData.filename_disk);
+					}
 				}
 			}
 

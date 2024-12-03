@@ -19,7 +19,7 @@ import { validateAccess } from '../permissions/modules/validate-access/validate-
 import { getAxios } from '../request/index.js';
 import { getStorage } from '../storage/index.js';
 import type { AbstractServiceOptions, MutationOptions } from '../types/index.js';
-import { extractMetadata } from './files/lib/extract-metadata.js';
+import { extractMetadata, extractEmbedMetadata } from './files/lib/extract-metadata.js';
 import { ItemsService, type QueryOptions } from './items.js';
 
 const env = useEnv();
@@ -34,7 +34,7 @@ export class FilesService extends ItemsService<File> {
 	 * Upload a single new file to the configured storage adapter
 	 */
 	async uploadOne(
-		stream: BusboyFileStream | Readable,
+		stream: BusboyFileStream | Readable | null,
 		data: Partial<File> & { storage: string },
 		primaryKey?: PrimaryKey,
 		opts?: MutationOptions,
@@ -76,110 +76,112 @@ export class FilesService extends ItemsService<File> {
 			primaryKey = await this.createOne(payload, { emitEvents: false });
 		}
 
-		const fileExtension =
-			path.extname(payload.filename_download!) || (payload.type && '.' + extension(payload.type)) || '';
+		if (stream !== null && payload.filename_download) {
+			const fileExtension =
+				path.extname(payload.filename_download) || (payload.type && '.' + extension(payload.type)) || '';
 
-		const filenameDisk = primaryKey + (fileExtension || '');
+			const filenameDisk = primaryKey + (fileExtension || '');
 
-		// The filename_disk is the FINAL filename on disk
-		payload.filename_disk ||= filenameDisk;
+			// The filename_disk is the FINAL filename on disk
+			payload.filename_disk ||= filenameDisk;
 
-		// If the filename_disk extension doesn't match the new mimetype, update it
-		if (isReplacement === true && path.extname(payload.filename_disk!) !== fileExtension) {
-			payload.filename_disk = filenameDisk;
-		}
+			// If the filename_disk extension doesn't match the new mimetype, update it
+			if (isReplacement === true && path.extname(payload.filename_disk!) !== fileExtension) {
+				payload.filename_disk = filenameDisk;
+			}
 
-		// Temp filename is used for replacements
-		const tempFilenameDisk = 'temp_' + filenameDisk;
+			// Temp filename is used for replacements
+			const tempFilenameDisk = 'temp_' + filenameDisk;
 
-		if (!payload.type) {
-			payload.type = 'application/octet-stream';
-		}
+			if (!payload.type) {
+				payload.type = 'application/octet-stream';
+			}
 
-		// Used to clean up if something goes wrong
-		const cleanUp = async () => {
+			// Used to clean up if something goes wrong
+			const cleanUp = async () => {
+				try {
+					if (isReplacement === true) {
+						// If this is a replacement that failed, we need to delete the temp file
+						await disk.delete(tempFilenameDisk);
+					} else {
+						// If this is a new file that failed
+						// delete the DB record
+						await super.deleteMany([primaryKey!]);
+
+						// delete the final file
+						await disk.delete(payload.filename_disk!);
+					}
+				} catch (err: any) {
+					if (isReplacement === true) {
+						logger.warn(`Couldn't delete temp file ${tempFilenameDisk}`);
+					} else {
+						logger.warn(`Couldn't delete file ${payload.filename_disk}`);
+					}
+
+					logger.warn(err);
+				}
+			};
+
 			try {
+				// If this is a replacement, we'll write the file to a temp location first to ensure we don't overwrite the existing file if something goes wrong
 				if (isReplacement === true) {
-					// If this is a replacement that failed, we need to delete the temp file
-					await disk.delete(tempFilenameDisk);
+					await disk.write(tempFilenameDisk, stream, payload.type);
 				} else {
-					// If this is a new file that failed
-					// delete the DB record
-					await super.deleteMany([primaryKey!]);
+					// If this is a new file upload, we'll write the file to the final location
+					await disk.write(payload.filename_disk, stream, payload.type);
+				}
 
-					// delete the final file
-					await disk.delete(payload.filename_disk!);
+				// Check if the file was truncated (if the stream ended early) and throw limit error if it was
+				if ('truncated' in stream && stream.truncated === true) {
+					throw new ContentTooLargeError();
 				}
 			} catch (err: any) {
-				if (isReplacement === true) {
-					logger.warn(`Couldn't delete temp file ${tempFilenameDisk}`);
-				} else {
-					logger.warn(`Couldn't delete file ${payload.filename_disk}`);
-				}
-
+				logger.warn(`Couldn't save file ${payload.filename_disk}`);
 				logger.warn(err);
-			}
-		};
 
-		try {
-			// If this is a replacement, we'll write the file to a temp location first to ensure we don't overwrite the existing file if something goes wrong
-			if (isReplacement === true) {
-				await disk.write(tempFilenameDisk, stream, payload.type);
-			} else {
-				// If this is a new file upload, we'll write the file to the final location
-				await disk.write(payload.filename_disk, stream, payload.type);
-			}
-
-			// Check if the file was truncated (if the stream ended early) and throw limit error if it was
-			if ('truncated' in stream && stream.truncated === true) {
-				throw new ContentTooLargeError();
-			}
-		} catch (err: any) {
-			logger.warn(`Couldn't save file ${payload.filename_disk}`);
-			logger.warn(err);
-
-			await cleanUp();
-
-			if (err instanceof ContentTooLargeError) {
-				throw err;
-			} else {
-				throw new ServiceUnavailableError({ service: 'files', reason: `Couldn't save file ${payload.filename_disk}` });
-			}
-		}
-
-		// If the file is a replacement, we need to update the DB record with the new payload, delete the old files, and upgrade the temp file
-		if (isReplacement === true) {
-			try {
-				await this.updateOne(primaryKey, payload, { emitEvents: false });
-
-				// delete the previously saved file and thumbnails to ensure they're generated fresh
-				for await (const filepath of disk.list(String(primaryKey))) {
-					await disk.delete(filepath);
-				}
-
-				// Upgrade the temp file to the final filename
-				await disk.move(tempFilenameDisk, payload.filename_disk);
-			} catch (err: any) {
 				await cleanUp();
-				throw err;
+
+				if (err instanceof ContentTooLargeError) {
+					throw err;
+				} else {
+					throw new ServiceUnavailableError({ service: 'files', reason: `Couldn't save file ${payload.filename_disk}` });
+				}
 			}
+
+			// If the file is a replacement, we need to update the DB record with the new payload, delete the old files, and upgrade the temp file
+			if (isReplacement === true) {
+				try {
+					await this.updateOne(primaryKey, payload, { emitEvents: false });
+
+					// delete the previously saved file and thumbnails to ensure they're generated fresh
+					for await (const filepath of disk.list(String(primaryKey))) {
+						await disk.delete(filepath);
+					}
+
+					// Upgrade the temp file to the final filename
+					await disk.move(tempFilenameDisk, payload.filename_disk);
+				} catch (err: any) {
+					await cleanUp();
+					throw err;
+				}
+			}
+
+			const { size } = await storage.location(data.storage).stat(payload.filename_disk);
+			payload.filesize = size;
+
+			const metadata = await extractMetadata(data.storage, payload as Parameters<typeof extractMetadata>[1]);
+
+			payload.uploaded_on = new Date().toISOString();
+
+			// We do this in a service without accountability. Even if you don't have update permissions to the file,
+			// we still want to be able to set the extracted values from the file on create
+			const sudoFilesItemsService = new ItemsService('directus_files', {
+				knex: this.knex,
+				schema: this.schema,
+			});
+
+			await sudoFilesItemsService.updateOne(primaryKey, { ...payload, ...metadata }, { emitEvents: false });
 		}
-
-		const { size } = await storage.location(data.storage).stat(payload.filename_disk);
-		payload.filesize = size;
-
-		const metadata = await extractMetadata(data.storage, payload as Parameters<typeof extractMetadata>[1]);
-
-		payload.uploaded_on = new Date().toISOString();
-
-		// We do this in a service without accountability. Even if you don't have update permissions to the file,
-		// we still want to be able to set the extracted values from the file on create
-		const sudoFilesItemsService = new ItemsService('directus_files', {
-			knex: this.knex,
-			schema: this.schema,
-		});
-
-		await sudoFilesItemsService.updateOne(primaryKey, { ...payload, ...metadata }, { emitEvents: false });
 
 		if (opts?.emitEvents !== false) {
 			emitter.emitAction(
@@ -207,7 +209,7 @@ export class FilesService extends ItemsService<File> {
 	/**
 	 * Import a single file from an external URL
 	 */
-	async importOne(importURL: string, body: Partial<File>): Promise<PrimaryKey> {
+	async importOne(importURL: string, body: Partial<File>, isEmbed: boolean = false): Promise<PrimaryKey> {
 		if (this.accountability) {
 			await validateAccess(
 				{
@@ -222,12 +224,36 @@ export class FilesService extends ItemsService<File> {
 			);
 		}
 
+		const encodedURL = encodeURL(importURL);
+
+		if (isEmbed) {
+			let payload = {
+				storage: toArray(env['STORAGE_LOCATIONS'] as string)[0]!,
+				...(body || {}),
+			};
+
+			try {
+				const embedMeta = await extractEmbedMetadata(encodedURL);
+				payload = { ...payload, ...embedMeta };
+			} catch (error: any) {
+				logger.warn(`Couldn't extract embed metadata from URL "${importURL}" ${error.message ?? ''}`);
+				logger.trace(error);
+
+				throw new ServiceUnavailableError({
+					service: 'external-file',
+					reason: `Couldn't extract embed metadata from URL "${importURL}"`,
+				});
+			}
+
+			return await this.uploadOne(null, payload, payload.id);
+		}
+
 		let fileResponse;
 
 		try {
 			const axios = await getAxios();
 
-			fileResponse = await axios.get<Readable>(encodeURL(importURL), {
+			fileResponse = await axios.get<Readable>(encodedURL, {
 				responseType: 'stream',
 				decompress: false,
 			});
@@ -284,6 +310,8 @@ export class FilesService extends ItemsService<File> {
 		await super.deleteMany(keys);
 
 		for (const file of files) {
+			if (file['filename_disk'] === null) continue;
+
 			const disk = storage.location(file['storage']);
 			const filePrefix = path.parse(file['filename_disk']).name;
 
