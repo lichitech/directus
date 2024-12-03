@@ -1,18 +1,18 @@
 import type { File } from '@directus/types';
 import { SUPPORTED_FILE_METADATA_FORMATS } from '../../../constants.js';
 import { getStorage } from '../../../storage/index.js';
-import { getMetadata, type Metadata } from '../utils/get-metadata.js';
+import { getFileMetadata, getEmbedMetadata, type FileMetadata, type EmbedMetadata } from '../utils/get-metadata.js';
 
-export async function extractMetadata(
+export async function extractFileMetadata(
 	storageLocation: string,
 	data: Partial<File> & Pick<File, 'type' | 'filename_disk'>,
-): Promise<Metadata> {
+): Promise<FileMetadata> {
 	const storage = await getStorage();
-	const fileMeta: Metadata = {};
+	const fileMeta: FileMetadata = {};
 
-	if (data.type && SUPPORTED_FILE_METADATA_FORMATS.includes(data.type)) {
+	if (data.type && SUPPORTED_FILE_METADATA_FORMATS.includes(data.type) && data.filename_disk) {
 		const stream = await storage.location(storageLocation).read(data.filename_disk);
-		const { height, width, description, title, tags, metadata, duration } = await getMetadata(stream, data.type);
+		const { height, width, description, title, tags, metadata, duration } = await getFileMetadata(stream, data.type);
 
 		// Note that if this is a replace file upload, the below properties are fetched and included in the data above
 		// in the `existingFile` variable... so this will ONLY set the values if they're not already set
@@ -47,4 +47,8 @@ export async function extractMetadata(
 	}
 
 	return fileMeta;
+}
+
+export function extractEmbedMetadata(url: string): Promise<EmbedMetadata> {
+	return getEmbedMetadata(url);
 }
