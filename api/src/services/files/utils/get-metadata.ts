@@ -8,6 +8,10 @@ import { pipeline } from 'node:stream/promises';
 import { useLogger } from '../../../logger/index.js';
 import { getSharpInstance } from '../lib/get-sharp-instance.js';
 import { parseIptc, parseXmp } from './parse-image-metadata.js';
+import extractPageMeta from 'open-graph-scraper';
+import { extract as extractOEmbed } from '@extractus/oembed-extractor';
+import { decodeHTML } from 'entities';
+import { parseFavicon } from 'parse-favicon';
 
 const env = useEnv();
 const logger = useLogger();
@@ -138,5 +142,117 @@ export async function getMetadata(
 				resolve(metadata);
 			}),
 		);
+	});
+}
+
+export type EmbedMetadata = Partial<Pick<File, 'height' | 'width' | 'description' | 'title' | 'metadata' | 'type' | 'duration' | 'embed'>>;
+
+export async function getEmbedMetadata(url: string): Promise<EmbedMetadata> {
+	const embedMeta: EmbedMetadata = { embed: url };
+	const fetchOptions = { headers: { 'user-agent': 'facebookexternalhit' } };
+
+	const [oEmbed, pageMeta] = await Promise.all([
+		extractOEmbed(url, {}, fetchOptions).catch((err) => {
+			logger.warn(`Couldn't extract oEmbed data from ${url}`);
+			logger.warn(err);
+			return {};
+		}),
+		extractPageMeta({
+			url,
+			fetchOptions,
+			customMetaTags: [
+				{
+					multiple: false,
+					property: 'hostname',
+					fieldName: 'hostnameMetaTag',
+				},
+			],
+		}).then(async ({ html, result }) => {
+			if (result.favicon === undefined || result.favicon.length === 0) {
+				const favicon = await getFavicon({ url, html, fetchOptions });
+				if (favicon) result.favicon = favicon;
+			}
+
+			return result;
+		}),
+	]);
+
+	const metadata = { oEmbed, ...pageMeta };
+	if (!Object.keys(metadata).length || !('type' in oEmbed)) return embedMeta;
+
+	embedMeta.type = `embed/${oEmbed.type}`;
+
+	embedMeta.metadata = metadata;
+
+	const { ogTitle, twitterTitle, dcTitle } = metadata;
+	const title = oEmbed.title ?? ogTitle ?? twitterTitle ?? dcTitle;
+	if (title) embedMeta.title = title;
+
+	const { ogDescription, twitterDescription, dcDescription } = metadata;
+	const description = ogDescription ?? twitterDescription ?? dcDescription;
+	if (description) embedMeta.description = decodeHTML(description);
+
+	const { ogVideo, twitterPlayer, ogImage } = metadata;
+	const { width, height } = ogVideo?.[0] ?? twitterPlayer?.[0] ?? ogImage?.[0] ?? {};
+
+	if (width && height) {
+		embedMeta.width = width;
+		embedMeta.height = height;
+	}
+
+	const { ogVideoDuration, musicDuration } = metadata;
+	const durationString = ogVideoDuration ?? musicDuration;
+
+	if (durationString) {
+		try {
+			const duration = Math.round(Number.parseInt(durationString) * 1000);
+			embedMeta.duration = duration;
+		} catch (err) {
+			logger.warn(`Couldn't parse embed resource duration '${durationString}' to number`);
+			logger.warn(err);
+		}
+	}
+
+	return embedMeta;
+}
+
+async function getFavicon({
+	url,
+	html,
+	fetchOptions,
+}: {
+	url: string;
+	html: string | undefined;
+	fetchOptions?: RequestInit;
+}): Promise<string | null> {
+	const textFetcher = (fetchURL: string): Promise<string> | string => {
+		if (html) return html;
+		return fetch(fetchURL).then((res) => res.text());
+	};
+
+	const bufferFetcher = (fetchURL: string): Promise<ArrayBuffer> => {
+		return fetch(fetchURL, fetchOptions).then((res) => res.arrayBuffer());
+	};
+
+	return new Promise((resolve) => {
+		let favicon: string | null = null;
+
+		const subscription = parseFavicon(url, textFetcher, bufferFetcher).subscribe({
+			next: (icon) => {
+				if (icon.url) {
+					favicon = new URL(icon.url, url).toString();
+					subscription.unsubscribe();
+					resolve(favicon);
+				}
+			},
+			error: (err) => {
+				logger.warn(`Couldn't parse favicon`);
+				logger.warn(err);
+			},
+			complete: () => {
+				if (!subscription.closed) subscription.unsubscribe();
+				resolve(favicon);
+			},
+		});
 	});
 }
