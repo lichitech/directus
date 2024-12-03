@@ -154,13 +154,12 @@ export default async function createApp(): Promise<express.Application> {
 
 						// These are required for MapLibre
 						workerSrc: ["'self'", 'blob:'],
-						childSrc: ["'self'", 'blob:'],
+						childSrc: ["'self'", 'blob:', 'https://*'],
 						imgSrc: [
 							"'self'",
 							'data:',
 							'blob:',
-							'https://raw.githubusercontent.com',
-							'https://avatars.githubusercontent.com',
+							'https://*',
 						],
 						mediaSrc: ["'self'"],
 						connectSrc: ["'self'", 'https://*', 'wss://*'],

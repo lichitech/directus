@@ -100,7 +100,8 @@ export class AssetsService {
 
 		const file = (await this.filesService.readOne(id, { limit: 1 })) as File;
 
-		const exists = await storage.location(file.storage).exists(file.filename_disk);
+		const filenameDisk = file.filename_disk
+		const exists = filenameDisk !== null && (await storage.location(file.storage).exists(filenameDisk));
 
 		if (!exists) throw new ForbiddenError();
 
@@ -152,9 +153,9 @@ export class AssetsService {
 			const maybeNewFormat = TransformationUtils.maybeExtractFormat(transforms);
 
 			const assetFilename =
-				path.basename(file.filename_disk, path.extname(file.filename_disk)) +
+				path.basename(filenameDisk, path.extname(filenameDisk)) +
 				getAssetSuffix(transforms) +
-				(maybeNewFormat ? `.${maybeNewFormat}` : path.extname(file.filename_disk));
+				(maybeNewFormat ? `.${maybeNewFormat}` : path.extname(filenameDisk));
 
 			const exists = await storage.location(file.storage).exists(assetFilename);
 
@@ -216,7 +217,7 @@ export class AssetsService {
 				throw error;
 			}
 
-			const readStream = await storage.location(file.storage).read(file.filename_disk, { range, version });
+			const readStream = await storage.location(file.storage).read(filenameDisk, { range, version });
 
 			readStream.on('error', (e: Error) => {
 				logger.error(e, `Couldn't transform file ${file.id}`);
@@ -247,8 +248,8 @@ export class AssetsService {
 				file,
 			};
 		} else {
-			const assetStream = () => storage.location(file.storage).read(file.filename_disk, { range, version });
-			const stat = await storage.location(file.storage).stat(file.filename_disk);
+			const assetStream = () => storage.location(file.storage).read(filenameDisk, { range, version });
+			const stat = await storage.location(file.storage).stat(filenameDisk);
 			return { stream: deferStream ? assetStream : await assetStream(), file, stat };
 		}
 	}
