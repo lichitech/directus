@@ -3,7 +3,7 @@ name: Blackbox Tests
 on:
   push:
     branches:
-      - main
+      - lichi
     paths:
       - api/**
       - tests/blackbox/**
