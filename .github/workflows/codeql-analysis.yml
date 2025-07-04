@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: lichi
 
       - name: Prepare
         uses: ./.github/actions/prepare
