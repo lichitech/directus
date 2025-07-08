@@ -49,10 +49,6 @@ EOF
 
 FROM node:${NODE_VERSION}-alpine AS runtime
 
-RUN npm install --global \
-	pm2@5 \
-	corepack@latest # Remove again once corepack >= 0.31 made it into base image
-
 USER node
 
 WORKDIR /directus
@@ -70,5 +66,5 @@ EXPOSE 8055
 
 CMD : \
 	&& node cli.js bootstrap \
-	&& pm2-runtime start ecosystem.config.cjs \
+	&& node cli.js start \
 	;
