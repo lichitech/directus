@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { ContentTooLargeError, InvalidPayloadError, ServiceUnavailableError } from '@directus/errors';
 import formatTitle from '@directus/format-title';
 import type {

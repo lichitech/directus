@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { REDACTED_TEXT, toArray, toBoolean } from '@directus/utils';
 import type { Request, RequestHandler } from 'express';
 import { merge } from 'lodash-es';

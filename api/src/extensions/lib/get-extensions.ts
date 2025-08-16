@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../utils/use-tenant-env.js';
 import { resolveFsExtensions, resolveModuleExtensions } from '@directus/extensions/node';
 import { join } from 'node:path';
 import { getExtensionsPath } from './get-extensions-path.js';

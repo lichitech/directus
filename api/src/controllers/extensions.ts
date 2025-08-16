@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { ErrorCode, ForbiddenError, isDirectusError, RouteNotFoundError } from '@directus/errors';
 import { EXTENSION_TYPES } from '@directus/constants';
 import {

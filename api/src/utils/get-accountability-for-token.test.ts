@@ -5,7 +5,7 @@ import { getAccountabilityForToken } from './get-accountability-for-token.js';
 import { fetchGlobalAccess } from '../permissions/modules/fetch-global-access/fetch-global-access.js';
 import { fetchRolesTree } from '../permissions/lib/fetch-roles-tree.js';
 
-vi.mock('@directus/env', () => {
+vi.mock('./../utils/use-tenant-env.js', () => {
 	return {
 		useEnv: vi.fn().mockReturnValue({ SECRET: 'super-secure-secret', EXTENSIONS_PATH: './extensions' }),
 	};

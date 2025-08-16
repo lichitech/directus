@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import os from 'node:os';
 import { matches } from 'ip-matching';
 import { useLogger } from '../logger/index.js';

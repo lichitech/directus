@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../utils/use-tenant-env.js';
 import type { Accountability } from '@directus/types';
 import { getSimpleHash } from '@directus/utils';
 import { getCache, getCacheValue, setCacheValue } from '../../cache.js';

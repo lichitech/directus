@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from './utils/use-tenant-env.js';
 import { InvalidProviderConfigError } from '@directus/errors';
 import { toArray } from '@directus/utils';
 import type { AuthDriver } from './auth/auth.js';

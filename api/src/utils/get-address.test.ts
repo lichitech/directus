@@ -1,11 +1,11 @@
 import * as http from 'http';
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { describe, expect, test, vi } from 'vitest';
 import { getAddress } from './get-address.js';
 import type { ListenOptions } from 'net';
 import getPort from 'get-port';
 
-vi.mock('@directus/env');
+vi.mock('../utils/use-tenant-env.js');
 
 function createServer(listenOptions?: ListenOptions) {
 	return new Promise<http.Server>((resolve, reject) => {

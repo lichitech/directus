@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../../utils/use-tenant-env.js';
 import type { File } from '@directus/types';
 import exif, { type GPSInfoTags, type ImageTags, type IopTags, type PhotoTags } from 'exif-reader';
 import { type IccProfile, parse as parseIcc } from 'icc';

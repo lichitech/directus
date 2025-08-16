@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../../utils/use-tenant-env.js';
 import sharp, { type FailOnOptions, type Sharp } from 'sharp';
 
 export function getSharpInstance(): Sharp {

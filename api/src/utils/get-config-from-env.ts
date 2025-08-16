@@ -1,7 +1,7 @@
-import { useEnv } from '@directus/env';
 import { toArray } from '@directus/utils';
 import camelcase from 'camelcase';
 import { set } from 'lodash-es';
+import { useEnv } from '../utils/use-tenant-env.js';
 
 export interface GetConfigFromEnvOptions {
 	omitPrefix?: string | string[];

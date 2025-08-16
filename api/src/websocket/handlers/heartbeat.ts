@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../utils/use-tenant-env.js';
 import { ServiceUnavailableError } from '@directus/errors';
 import type { ActionHandler } from '@directus/types';
 import { WebSocketMessage } from '@directus/types';

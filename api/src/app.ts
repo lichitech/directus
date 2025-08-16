@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from './utils/use-tenant-env.js';
 import { InvalidPayloadError, ServiceUnavailableError } from '@directus/errors';
 import { handlePressure } from '@directus/pressure';
 import cookieParser from 'cookie-parser';
@@ -46,6 +46,7 @@ import usersRouter from './controllers/users.js';
 import utilsRouter from './controllers/utils.js';
 import versionsRouter from './controllers/versions.js';
 import webhooksRouter from './controllers/webhooks.js';
+import { multiTenant } from './multi-tenant.js';
 import {
 	isInstalled,
 	validateDatabaseConnection,
@@ -113,6 +114,8 @@ export default async function createApp(): Promise<express.Application> {
 	await flowManager.initialize();
 
 	const app = express();
+
+	app.use(multiTenant);
 
 	app.disable('x-powered-by');
 	app.set('trust proxy', env['IP_TRUST_PROXY']);

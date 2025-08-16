@@ -1,9 +1,9 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../../utils/use-tenant-env.js';
 import { getSharpInstance } from './get-sharp-instance.js';
 
 import { beforeAll, expect, test, vi } from 'vitest';
 
-vi.mock('@directus/env');
+vi.mock('../../../utils/use-tenant-env.js');
 
 vi.mock('sharp', () => {
 	const sharp = {

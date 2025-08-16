@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../utils/use-tenant-env.js';
 import { InvalidPayloadError } from '@directus/errors';
 import type { AbstractServiceOptions, Accountability, SchemaOverview } from '@directus/types';
 import { isObject } from '@directus/utils';

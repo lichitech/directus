@@ -1,9 +1,9 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import type { IncomingMessage } from 'http';
 import { describe, expect, test, vi } from 'vitest';
 import { getIPFromReq } from './get-ip-from-req.js';
 
-vi.mock('@directus/env');
+vi.mock('../utils/use-tenant-env.js');
 
 describe('getIPFromReq', () => {
 	test('Removes null if ip is undefined', () => {

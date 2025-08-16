@@ -1,5 +1,5 @@
 import { Action } from '@directus/constants';
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { toBoolean } from '@directus/utils';
 import type { Knex } from 'knex';
 import { getHelpers } from '../database/helpers/index.js';

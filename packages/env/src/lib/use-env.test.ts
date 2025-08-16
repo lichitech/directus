@@ -11,19 +11,19 @@ afterEach(() => {
 });
 
 test('Returns cached env if exists', () => {
-	_cache.env = {};
+	_cache.env = { defaults: {}, tenants: new Map() };
 
 	const env = useEnv();
 
-	expect(env).toBe(_cache.env);
+	expect(env).toBe(_cache.env.defaults);
 });
 
 test('Creates new cached env if not exists', () => {
-	const mockEnv = {};
+	const mockEnv = { defaults: {}, tenants: new Map() };
 	vi.mocked(createEnv).mockReturnValue(mockEnv);
 
 	const env = useEnv();
 
-	expect(env).toBe(mockEnv);
+	expect(env).toBe(mockEnv.defaults);
 	expect(_cache.env).toBe(mockEnv);
 });

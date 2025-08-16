@@ -1,5 +1,5 @@
 import { Action } from '@directus/constants';
-import { useEnv } from '@directus/env';
+import { useEnv } from './utils/use-tenant-env.js';
 import { ForbiddenError } from '@directus/errors';
 import { isSystemCollection } from '@directus/system-data';
 import type {

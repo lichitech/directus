@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { toBoolean } from '@directus/utils';
 import { scheduleJob } from 'node-schedule';
 import { useLogger } from '../logger/index.js';

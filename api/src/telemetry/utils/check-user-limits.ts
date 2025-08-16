@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../utils/use-tenant-env.js';
 import { LimitExceededError } from '@directus/errors';
 import { type UserCount } from '../../utils/fetch-user-count/fetch-user-count.js';
 

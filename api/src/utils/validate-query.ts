@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { InvalidQueryError } from '@directus/errors';
 import type { Filter, Query } from '@directus/types';
 import Joi from 'joi';

@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../utils/use-tenant-env.js';
 import { toBoolean } from '@directus/utils';
 import type { Server as httpServer } from 'http';
 import { GraphQLSubscriptionController } from './graphql.js';

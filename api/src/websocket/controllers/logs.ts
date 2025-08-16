@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../utils/use-tenant-env.js';
 import type { WebSocketMessage } from '@directus/types';
 import type { Server as httpServer } from 'http';
 import type WebSocket from 'ws';

@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import type { AbstractServiceOptions, Accountability, SchemaOverview } from '@directus/types';
 import { toArray, toBoolean } from '@directus/utils';
 import { version } from 'directus/version';
@@ -17,6 +17,7 @@ import { SERVER_ONLINE } from '../server.js';
 import { getStorage } from '../storage/index.js';
 import { getAllowedLogLevels } from '../utils/get-allowed-log-levels.js';
 import { SettingsService } from './settings.js';
+import { tenantStorage } from '../multi-tenant.js';
 
 const env = useEnv();
 const logger = useLogger();
@@ -36,6 +37,8 @@ export class ServerService {
 
 	async serverInfo(): Promise<Record<string, any>> {
 		const info: Record<string, any> = {};
+
+		info["tenant_id"] = tenantStorage.getStore()
 
 		const projectInfo = await this.settingsService.readSingleton({
 			fields: [

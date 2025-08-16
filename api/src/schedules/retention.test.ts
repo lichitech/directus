@@ -1,9 +1,9 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import * as schedule from '../utils/schedule.js';
 import { handleRetentionJob, default as retentionSchedule } from './retention.js';
 
-vi.mock('@directus/env', () => ({
+vi.mock('./../utils/use-tenant-env.js', () => ({
 	useEnv: vi.fn().mockReturnValue({}),
 }));
 

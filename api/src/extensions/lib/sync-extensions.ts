@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../utils/use-tenant-env.js';
 import { exists } from 'fs-extra';
 import mid from 'node-machine-id';
 import { createWriteStream } from 'node:fs';

@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import type { Request } from 'express';
 import type { Knex } from 'knex';
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi, type MockInstance } from 'vitest';
@@ -13,7 +13,7 @@ vi.mock('../permissions/modules/fetch-policies-ip-access/fetch-policies-ip-acces
 
 vi.mock('directus/version', () => ({ version: '1.2.3' }));
 
-vi.mock('@directus/env', () => ({
+vi.mock('./../utils/use-tenant-env.js', () => ({
 	useEnv: vi.fn().mockReturnValue({
 		REDIS_ENABLED: false,
 	}),

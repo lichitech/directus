@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import type Keyv from 'keyv';
 import type { MutationOptions } from '@directus/types';
 

@@ -1,1 +1,1 @@
-export { useEnv } from './lib/use-env.js';
+export { useEnv, useEnvMap } from './lib/use-env.js';

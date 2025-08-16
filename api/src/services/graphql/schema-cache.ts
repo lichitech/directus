@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../utils/use-tenant-env.js';
 import { GraphQLSchema } from 'graphql';
 import { LRUMap } from 'mnemonist';
 import { useBus } from '../../bus/index.js';

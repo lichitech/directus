@@ -2,7 +2,7 @@ import type { KNEX_TYPES } from '@directus/constants';
 import { type Knex } from 'knex';
 import type { Options, SortRecord } from '../types.js';
 import { SchemaHelper } from '../types.js';
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../../../utils/use-tenant-env.js';
 
 const env = useEnv();
 

@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../utils/use-tenant-env.js';
 import { InvalidCredentialsError, InvalidPayloadError } from '@directus/errors';
 import type { Accountability } from '@directus/types';
 import argon2 from 'argon2';

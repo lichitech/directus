@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { ForbiddenError } from '@directus/errors';
 import { Router } from 'express';
 import { useMetrics } from '../metrics/index.js';

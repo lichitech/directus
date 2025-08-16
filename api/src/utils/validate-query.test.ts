@@ -1,7 +1,7 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-vi.mock('@directus/env');
+vi.mock('../utils/use-tenant-env.js');
 
 beforeEach(() => {
 	vi.resetModules();

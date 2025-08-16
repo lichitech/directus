@@ -24,7 +24,7 @@ vi.mock('../../emitter.js', () => ({
 	},
 }));
 
-vi.mock('@directus/env', () => ({
+vi.mock('./../../utils/use-tenant-env.js', () => ({
 	useEnv: vi.fn().mockReturnValue({
 		EMAIL_VERIFY_SETUP: false,
 		EMAIL_FROM: 'test@example.com',

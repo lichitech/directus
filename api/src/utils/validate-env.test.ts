@@ -1,10 +1,10 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import type { Logger } from 'pino';
 import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 import { useLogger } from '../logger/index.js';
 import { validateEnv } from './validate-env.js';
 
-vi.mock('@directus/env');
+vi.mock('../utils/use-tenant-env.js');
 
 vi.mock('../logger');
 

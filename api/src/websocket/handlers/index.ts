@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../utils/use-tenant-env.js';
 import { toBoolean } from '@directus/utils';
 import { HeartbeatHandler } from './heartbeat.js';
 import { ItemsHandler } from './items.js';

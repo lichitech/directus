@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { nanoid } from 'nanoid';
 
 export const _cache: { secret: string | null } = { secret: null };

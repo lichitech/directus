@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../../utils/use-tenant-env.js';
 import { resolvePackage } from '@directus/utils/node';
 import { escapeRegExp } from 'lodash-es';
 import { readdir } from 'node:fs/promises';

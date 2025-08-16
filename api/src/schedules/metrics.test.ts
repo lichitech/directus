@@ -1,10 +1,10 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { scheduleJob } from 'node-schedule';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import * as schedule from '../utils/schedule.js';
 import { handleMetricsJob, default as metricsSchedule } from './metrics.js';
 
-vi.mock('@directus/env', () => ({
+vi.mock('./../utils/use-tenant-env.js', () => ({
 	useEnv: vi.fn().mockReturnValue({}),
 }));
 

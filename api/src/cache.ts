@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from './utils/use-tenant-env.js';
 import type { SchemaOverview } from '@directus/types';
 import Keyv, { type KeyvOptions } from 'keyv';
 import { useBus } from './bus/index.js';

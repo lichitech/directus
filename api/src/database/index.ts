@@ -1,4 +1,3 @@
-import { useEnv } from '@directus/env';
 import type { SchemaInspector } from '@directus/schema';
 import { createInspector } from '@directus/schema';
 import { isObject } from '@directus/utils';
@@ -14,8 +13,10 @@ import { performance } from 'perf_hooks';
 import { getExtensionsPath } from '../extensions/lib/get-extensions-path.js';
 import { useLogger } from '../logger/index.js';
 import { useMetrics } from '../metrics/index.js';
+import { tenantStorage } from '../multi-tenant.js';
 import { getConfigFromEnv } from '../utils/get-config-from-env.js';
 import { validateEnv } from '../utils/validate-env.js';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { getHelpers } from './helpers/index.js';
 
 type QueryInfo = Partial<Knex.Sql> & {
@@ -25,18 +26,12 @@ type QueryInfo = Partial<Knex.Sql> & {
 	[key: string | number | symbol]: any;
 };
 
-let database: Knex | null = null;
-let inspector: SchemaInspector | null = null;
+const tenantDatabases = new Map<string, Knex>();
+const tenantInspectors = new Map<string, SchemaInspector>();
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export default getDatabase;
-
-export function getDatabase(): Knex {
-	if (database) {
-		return database;
-	}
-
+function createDatabase(): Knex {
 	const env = useEnv();
 	const logger = useLogger();
 	const metrics = useMetrics();
@@ -169,12 +164,12 @@ export function getDatabase(): Knex {
 		merge(knexConfig, { connection: { options: { useUTC: false } } });
 	}
 
-	database = knex.default(knexConfig);
-	validateDatabaseCharset(database);
+	const newDatabase = knex.default(knexConfig);
+	validateDatabaseCharset(newDatabase);
 
 	const times = new Map<string, number>();
 
-	database
+	newDatabase
 		.on('query', ({ __knexUid }: QueryInfo) => {
 			times.set(__knexUid, performance.now());
 		})
@@ -202,19 +197,44 @@ export function getDatabase(): Knex {
 			times.delete(queryInfo.__knexUid);
 		});
 
-	return database;
+	return newDatabase;
 }
 
-export function getSchemaInspector(database?: Knex): SchemaInspector {
-	if (inspector) {
-		return inspector;
+export default getDatabase;
+
+export function getDatabase(): Knex {
+	const tenantId = tenantStorage.getStore() ?? "";
+
+	if (tenantDatabases.has(tenantId)) {
+		return tenantDatabases.get(tenantId)!;
 	}
 
-	database ??= getDatabase();
+	const tenantDatabase = createDatabase();
+	tenantDatabases.set(tenantId, tenantDatabase);
+	return tenantDatabase;
+}
 
-	inspector = createInspector(database);
+export async function shutdownTenantDBs(): Promise<void> {
+	for (const [_tenantId, db] of tenantDatabases) {
+		await db.destroy();
+	}
+}
 
-	return inspector;
+export function getSchemaInspector(db?: Knex): SchemaInspector {
+	if (db) {
+		return createInspector(db);
+	}
+
+	const tenantId = tenantStorage.getStore() ?? "";
+	const currentDb = getDatabase();
+
+	if (tenantInspectors.has(tenantId)) {
+		return tenantInspectors.get(tenantId)!;
+	}
+
+	const newInspector = createInspector(currentDb);
+	tenantInspectors.set(tenantId, newInspector);
+	return newInspector;
 }
 
 export async function hasDatabaseConnection(database?: Knex): Promise<boolean> {

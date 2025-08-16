@@ -8,7 +8,7 @@ import asyncHandler from '../utils/async-handler.js';
 import { getAccountabilityForToken } from '../utils/get-accountability-for-token.js';
 import { getIPFromReq } from '../utils/get-ip-from-req.js';
 import { ErrorCode, isDirectusError } from '@directus/errors';
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import { SESSION_COOKIE_OPTIONS } from '../constants.js';
 
 /**

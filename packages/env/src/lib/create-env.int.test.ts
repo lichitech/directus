@@ -51,7 +51,7 @@ test('Defaults that have a type set is casted', () => {
 
 	const env = createEnv();
 
-	expect(env).toEqual({
+	expect(env.defaults).toEqual({
 		PROCESS1: 'test-process',
 		PROCESS2: ['one', 'two'],
 		PROCESS3: ['one', 'two', 'three'],

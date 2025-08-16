@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 import cors from 'cors';
 import type { RequestHandler } from 'express';
 

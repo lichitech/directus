@@ -1,5 +1,5 @@
 import * as http from 'http';
-import { useEnv } from '@directus/env';
+import { useEnv } from '../utils/use-tenant-env.js';
 
 export function getAddress(server: http.Server) {
 	const env = useEnv();

@@ -20,7 +20,7 @@ vi.mock('./mail', () => {
 	return { MailService };
 });
 
-vi.mock('@directus/env', () => ({
+vi.mock('./../utils/use-tenant-env.js', () => ({
 	useEnv: vi.fn().mockReturnValue({
 		EMAIL_TEMPLATES_PATH: './templates',
 		USERS_ADMIN_ACCESS_LIMIT: 3,
