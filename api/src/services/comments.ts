@@ -13,7 +13,7 @@ import { ItemsService } from './items.js';
 import { NotificationsService } from './notifications.js';
 import { UsersService } from './users.js';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 const logger = useLogger();
 
 export class CommentsService extends ItemsService {

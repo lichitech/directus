@@ -14,7 +14,7 @@ import { useLogger } from '../../../logger/index.js';
 import { getStorage } from '../../../storage/index.js';
 import { getExtensionsPath } from '../get-extensions-path.js';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 export class InstallationManager {
 	extensionPath = getExtensionsPath();

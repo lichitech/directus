@@ -44,7 +44,7 @@ import { UsersService } from './users.js';
 import { parseFields } from '../database/get-ast-from-query/lib/parse-fields.js';
 import { set } from 'lodash-es';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 const logger = useLogger();
 
 export class ImportService {

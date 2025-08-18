@@ -18,7 +18,7 @@ import type { StringValue } from 'ms';
 import type { Client } from 'openid-client';
 import { custom, errors, generators, Issuer } from 'openid-client';
 import { getAuthProvider } from '../../auth.js';
-import { REFRESH_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS } from '../../constants.js';
+import { constants } from '../../constants.js';
 import getDatabase from '../../database/index.js';
 import emitter from '../../emitter.js';
 import { useLogger } from '../../logger/index.js';
@@ -436,7 +436,7 @@ export function createOpenIDAuthRouter(providerName: string): Router {
 	router.get(
 		'/',
 		asyncHandler(async (req, res) => {
-			const provider = getAuthProvider(providerName) as OpenIDAuthDriver;
+			const provider = await getAuthProvider(providerName) as OpenIDAuthDriver;
 			const codeVerifier = provider.generateCodeVerifier();
 			const prompt = !!req.query['prompt'];
 			const redirect = req.query['redirect'];
@@ -558,9 +558,9 @@ export function createOpenIDAuthRouter(providerName: string): Router {
 
 			if (redirect) {
 				if (authMode === 'session') {
-					res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, SESSION_COOKIE_OPTIONS);
+					res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, constants.SESSION_COOKIE_OPTIONS);
 				} else {
-					res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, REFRESH_COOKIE_OPTIONS);
+					res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, constants.REFRESH_COOKIE_OPTIONS);
 				}
 
 				return res.redirect(redirect);

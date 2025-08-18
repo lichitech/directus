@@ -25,7 +25,7 @@ import { getMilliseconds } from '../utils/get-milliseconds.js';
 import type { ReadStream } from 'node:fs';
 
 const router = express.Router();
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 router.use(useCollection('directus_extensions'));
 

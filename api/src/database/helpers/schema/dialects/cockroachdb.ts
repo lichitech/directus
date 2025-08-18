@@ -4,7 +4,7 @@ import type { Options, SortRecord } from '../types.js';
 import { SchemaHelper } from '../types.js';
 import { useEnv } from '@directus/env';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 export class SchemaHelperCockroachDb extends SchemaHelper {
 	override async changeToType(

@@ -32,7 +32,7 @@ import { getRelationType } from './get-relation-type.js';
 import { resolveSystemAdmin } from './system-admin.js';
 import { globalResolvers } from './system-global.js';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 export function injectSystemResolvers(
 	gql: GraphQLService,

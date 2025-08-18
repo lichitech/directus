@@ -3,7 +3,7 @@ import type { Knex } from 'knex';
 import { getDefaultIndexName } from '../../../../utils/get-default-index-name.js';
 import { SchemaHelper, type SortRecord } from '../types.js';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 export class SchemaHelperPostgres extends SchemaHelper {
 	override generateIndexName(

@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnvTenant, useEnv } from '@directus/env';
 import { InvalidProviderConfigError } from '@directus/errors';
 import { toArray } from '@directus/utils';
 import type { AuthDriver } from './auth/auth.js';
@@ -16,23 +16,33 @@ import type { AuthDriverOptions } from './types/index.js';
 import { getConfigFromEnv } from './utils/get-config-from-env.js';
 import { getSchema } from './utils/get-schema.js';
 
-const providers: Map<string, AuthDriver> = new Map();
+const tenantProviders = new Map<string, Map<string, AuthDriver>>();
 
-export function getAuthProvider(provider: string): AuthDriver {
+export async function getAuthProvider(provider: string): Promise<AuthDriver> {
 	const logger = useLogger();
+	const tenantId = useEnvTenant.getTenantID();
+
+	if (!tenantProviders.has(tenantId)) {
+		await initializeProvidersForTenant(tenantId);
+	}
+
+	const providers = tenantProviders.get(tenantId)!;
 
 	if (!providers.has(provider)) {
-		logger.error('Auth provider not configured');
+		logger.error(`Auth provider "${provider}" isn't configured or is disabled for this tenant.`);
 		throw new InvalidProviderConfigError({ provider });
 	}
 
 	return providers.get(provider)!;
 }
 
-export async function registerAuthProviders(): Promise<void> {
+async function initializeProvidersForTenant(tenantId: string): Promise<void> {
 	const env = useEnv();
 	const logger = useLogger();
-	const options = { knex: getDatabase(), schema: await getSchema() };
+	const options: AuthDriverOptions = { knex: getDatabase(), schema: await getSchema() };
+
+	const providers = new Map<string, AuthDriver>();
+	tenantProviders.set(tenantId, providers);
 
 	const providerNames = toArray(env['AUTH_PROVIDERS'] as string);
 

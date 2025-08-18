@@ -17,7 +17,7 @@ import jwt from 'jsonwebtoken';
 import type { Client } from 'openid-client';
 import { errors, generators, Issuer } from 'openid-client';
 import { getAuthProvider } from '../../auth.js';
-import { REFRESH_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS } from '../../constants.js';
+import { constants } from '../../constants.js';
 import getDatabase from '../../database/index.js';
 import emitter from '../../emitter.js';
 import { useLogger } from '../../logger/index.js';
@@ -356,8 +356,8 @@ export function createOAuth2AuthRouter(providerName: string): Router {
 
 	router.get(
 		'/',
-		(req, res) => {
-			const provider = getAuthProvider(providerName) as OAuth2AuthDriver;
+		async (req, res) => {
+			const provider = await getAuthProvider(providerName) as OAuth2AuthDriver;
 			const codeVerifier = provider.generateCodeVerifier();
 			const prompt = !!req.query['prompt'];
 			const redirect = req.query['redirect'];
@@ -467,9 +467,9 @@ export function createOAuth2AuthRouter(providerName: string): Router {
 
 			if (redirect) {
 				if (authMode === 'session') {
-					res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, SESSION_COOKIE_OPTIONS);
+					res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, constants.SESSION_COOKIE_OPTIONS);
 				} else {
-					res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, REFRESH_COOKIE_OPTIONS);
+					res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, constants.REFRESH_COOKIE_OPTIONS);
 				}
 
 				return res.redirect(redirect);

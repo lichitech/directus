@@ -14,7 +14,7 @@ import { createRequire } from 'node:module';
 import { freezeSchema, unfreezeSchema } from './utils/freeze-schema.js';
 
 const logger = useLogger();
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 const require = createRequire(import.meta.url);
 

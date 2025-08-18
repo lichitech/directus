@@ -6,7 +6,7 @@ import emitter from '../emitter.js';
 import { getWebSocketController } from '../websocket/controllers/index.js';
 import type { WebSocketController } from '../websocket/controllers/rest.js';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 export class WebSocketService {
 	private controller: WebSocketController;

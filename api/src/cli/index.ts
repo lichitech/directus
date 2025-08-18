@@ -26,6 +26,7 @@ export async function createCli(): Promise<Command> {
 
 	program.name('directus').usage('[command] [options]');
 	program.version(version, '-v, --version');
+	program.option('--tenant <id>', 'The tenant ID to run the command for');
 
 	program.command('start').description('Start the Directus API').action(startServer);
 	program.command('init').description('Create a new Directus Project').action(init);

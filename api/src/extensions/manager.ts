@@ -68,7 +68,7 @@ const nodeResolve = nodeResolveDefault as unknown as typeof nodeResolveDefault.d
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 const defaultOptions: ExtensionManagerOptions = {
 	schedule: true,

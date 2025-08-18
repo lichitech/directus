@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnvTenant, useEnv } from '@directus/env';
 import { toBoolean } from '@directus/utils';
 import { scheduleJob } from 'node-schedule';
 import { useLogger } from '../logger/index.js';
@@ -38,6 +38,7 @@ export async function handleMetricsJob() {
  */
 export default async function schedule(): Promise<boolean> {
 	const env = useEnv();
+	const tenantId = useEnvTenant.getTenantID();
 
 	if (!toBoolean(env['METRICS_ENABLED'])) {
 		return false;
@@ -47,7 +48,7 @@ export default async function schedule(): Promise<boolean> {
 		return false;
 	}
 
-	scheduleJob('metrics', String(env['METRICS_SCHEDULE']), handleMetricsJob);
+	scheduleJob(`metrics:${tenantId}`, String(env['METRICS_SCHEDULE']), handleMetricsJob);
 
 	return true;
 }

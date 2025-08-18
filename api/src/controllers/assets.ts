@@ -19,7 +19,7 @@ import { getMilliseconds } from '../utils/get-milliseconds.js';
 
 const router = Router();
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 router.use(useCollection('directus_files'));
 

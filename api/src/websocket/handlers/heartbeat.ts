@@ -8,7 +8,7 @@ import { WebSocketController, getWebSocketController } from '../controllers/inde
 import type { WebSocketClient } from '../types.js';
 import { fmtMessage, getMessageType } from '../utils/message.js';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 const HEARTBEAT_FREQUENCY = Number(env['WEBSOCKETS_HEARTBEAT_PERIOD']) * 1000;
 

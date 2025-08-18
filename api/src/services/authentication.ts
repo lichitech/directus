@@ -27,7 +27,7 @@ import { ActivityService } from './activity.js';
 import { SettingsService } from './settings.js';
 import { TFAService } from './tfa.js';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 const loginAttemptsLimiter = createRateLimiter('RATE_LIMITER', { duration: 0 });
 
@@ -63,7 +63,7 @@ export class AuthenticationService {
 		const STALL_TIME = env['LOGIN_STALL_TIME'] as number;
 		const timeStart = performance.now();
 
-		const provider = getAuthProvider(providerName);
+		const provider = await getAuthProvider(providerName);
 
 		let userId;
 
@@ -324,7 +324,7 @@ export class AuthenticationService {
 		);
 
 		if (record.user_id) {
-			const provider = getAuthProvider(record.user_provider);
+			const provider = await getAuthProvider(record.user_provider);
 
 			await provider.refresh({
 				id: record.user_id,
@@ -491,7 +491,7 @@ export class AuthenticationService {
 		if (record) {
 			const user = record;
 
-			const provider = getAuthProvider(user.provider);
+			const provider = await getAuthProvider(user.provider);
 			await provider.logout(clone(user));
 
 			await this.knex.delete().from('directus_sessions').where('token', refreshToken);
@@ -520,7 +520,7 @@ export class AuthenticationService {
 			throw new InvalidCredentialsError();
 		}
 
-		const provider = getAuthProvider(user.provider);
+		const provider = await getAuthProvider(user.provider);
 		await provider.verify(clone(user), password);
 	}
 }

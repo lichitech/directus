@@ -31,7 +31,7 @@ import { getRelationType } from '../utils/get-relation-type.js';
 import { reduceSchema } from '../utils/reduce-schema.js';
 import { GraphQLService } from './graphql/index.js';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 export class SpecificationService {
 	accountability: Accountability | null;

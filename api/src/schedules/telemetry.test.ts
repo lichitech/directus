@@ -10,11 +10,15 @@ vi.mock('../cache.js');
 
 // This is required because logger uses global env which is imported before the tests run. Can be
 // reduce to just mock the file when logger is also using useLogger everywhere @TODO
-vi.mock('@directus/env', () => ({
-	useEnv: vi.fn().mockReturnValue({
-		EMAIL_TEMPLATES_PATH: './templates',
-	}),
-}));
+vi.mock(import("@directus/env"), async (importOriginal) => {
+	const actual = await importOriginal()
+	return {
+		...actual,
+		useEnv: vi.fn().mockReturnValue({
+			EMAIL_TEMPLATES_PATH: './templates',
+		}),
+	}
+});
 
 vi.mock('../utils/schedule.js');
 
@@ -43,7 +47,7 @@ describe('telemetry', () => {
 	test('Schedules synchronized job', async () => {
 		await telemetrySchedule();
 
-		expect(scheduleSynchronizedJob).toHaveBeenCalledWith('telemetry', '0 */6 * * *', jobCallback);
+		expect(scheduleSynchronizedJob).toHaveBeenCalledWith('telemetry:', '0 */6 * * *', jobCallback);
 	});
 
 	test('Sets lock and calls track without waiting if lock is not set yet', async () => {
@@ -51,7 +55,7 @@ describe('telemetry', () => {
 
 		await telemetrySchedule();
 
-		expect(mockCache.lockCache.set).toHaveBeenCalledWith('telemetry-lock', true, 30000);
+		expect(mockCache.lockCache.set).toHaveBeenCalledWith('telemetry-lock:', true, 30000);
 		expect(track).toHaveBeenCalledWith({ wait: false });
 	});
 

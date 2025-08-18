@@ -3,9 +3,13 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import * as schedule from '../utils/schedule.js';
 import { handleRetentionJob, default as retentionSchedule } from './retention.js';
 
-vi.mock('@directus/env', () => ({
-	useEnv: vi.fn().mockReturnValue({}),
-}));
+vi.mock(import('@directus/env'), async (importOriginal) => {
+	const actual = await importOriginal()
+	return {
+		...actual,
+		useEnv: vi.fn().mockReturnValue({}),
+	}
+});
 
 vi.spyOn(schedule, 'scheduleSynchronizedJob');
 vi.spyOn(schedule, 'validateCron');
@@ -41,7 +45,7 @@ describe('retention', () => {
 		await retentionSchedule();
 
 		expect(schedule.validateCron).toHaveBeenCalledWith('0 0 * * *');
-		expect(schedule.scheduleSynchronizedJob).toHaveBeenCalledWith('retention', '0 0 * * *', handleRetentionJob);
+		expect(schedule.scheduleSynchronizedJob).toHaveBeenCalledWith('retention:', '0 0 * * *', handleRetentionJob);
 	});
 
 	test('Returns true on successful init', async () => {

@@ -4,7 +4,7 @@ import type { RequestHandler } from 'express';
 
 let corsMiddleware: RequestHandler = (_req, _res, next) => next();
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 if (env['CORS_ENABLED'] === true) {
 	corsMiddleware = cors({

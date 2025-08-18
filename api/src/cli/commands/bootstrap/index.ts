@@ -9,6 +9,7 @@ import getDatabase, {
 import runMigrations from '../../../database/migrations/run.js';
 import installDatabase from '../../../database/seeds/run.js';
 import { useLogger } from '../../../logger/index.js';
+import { useEnvTenant } from '@directus/env';
 import { AccessService } from '../../../services/access.js';
 import { PoliciesService } from '../../../services/policies.js';
 import { RolesService } from '../../../services/roles.js';
@@ -17,11 +18,27 @@ import { UsersService } from '../../../services/users.js';
 import { getSchema } from '../../../utils/get-schema.js';
 import { defaultAdminPolicy, defaultAdminRole, defaultAdminUser } from '../../utils/defaults.js';
 
-export default async function bootstrap({ skipAdminInit }: { skipAdminInit?: boolean }): Promise<void> {
+export default async function bootstrap({ skipAdminInit, tenant }: { skipAdminInit?: boolean, tenant?: string }): Promise<void> {
 	const logger = useLogger();
 
 	logger.info('Initializing bootstrap...');
 
+	if (tenant) {
+		logger.info(`Bootstrapping tenant "${tenant}"...`);
+		await runBootstrap(skipAdminInit);
+	} else {
+		await useEnvTenant.runAll(async () => {
+			logger.info(`Bootstrapping tenant "${useEnvTenant.getTenantID()}"...`);
+			await runBootstrap(skipAdminInit);
+		});
+	}
+
+	logger.info('Done');
+	process.exit(0);
+}
+
+async function runBootstrap(skipAdminInit?: boolean): Promise<void> {
+	const logger = useLogger();
 	const env = useEnv();
 
 	const database = getDatabase();
@@ -53,10 +70,6 @@ export default async function bootstrap({ skipAdminInit }: { skipAdminInit?: boo
 		logger.info('Running migrations...');
 		await runMigrations(database, 'latest');
 	}
-
-	await database.destroy();
-	logger.info('Done');
-	process.exit(0);
 }
 
 async function waitForDatabase(database: Knex) {

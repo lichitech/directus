@@ -9,7 +9,7 @@ import { validateEnv } from '../utils/validate-env.js';
 
 const RATE_LIMITER_GLOBAL_KEY = 'global-rate-limit';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 const logger = useLogger();
 
 let checkRateLimit: RequestHandler = (_req, _res, next) => next();

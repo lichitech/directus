@@ -10,7 +10,7 @@ import {
 import express, { Router } from 'express';
 import * as samlify from 'samlify';
 import { getAuthProvider } from '../../auth.js';
-import { REFRESH_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS } from '../../constants.js';
+import { constants } from '../../constants.js';
 import getDatabase from '../../database/index.js';
 import emitter from '../../emitter.js';
 import { useLogger } from '../../logger/index.js';
@@ -120,7 +120,7 @@ export function createSAMLAuthRouter(providerName: string) {
 	router.get(
 		'/metadata',
 		asyncHandler(async (_req, res) => {
-			const { sp } = getAuthProvider(providerName) as SAMLAuthDriver;
+			const { sp } = await getAuthProvider(providerName) as SAMLAuthDriver;
 			return res.header('Content-Type', 'text/xml').send(sp.getMetadata());
 		}),
 	);
@@ -128,7 +128,7 @@ export function createSAMLAuthRouter(providerName: string) {
 	router.get(
 		'/',
 		asyncHandler(async (req, res) => {
-			const { sp, idp } = getAuthProvider(providerName) as SAMLAuthDriver;
+			const { sp, idp } = await getAuthProvider(providerName) as SAMLAuthDriver;
 			const { context: url } = sp.createLoginRequest(idp, 'redirect');
 			const parsedUrl = new URL(url);
 
@@ -149,7 +149,7 @@ export function createSAMLAuthRouter(providerName: string) {
 	router.post(
 		'/logout',
 		asyncHandler(async (req, res) => {
-			const { sp, idp } = getAuthProvider(providerName) as SAMLAuthDriver;
+			const { sp, idp } = await getAuthProvider(providerName) as SAMLAuthDriver;
 			const { context } = sp.createLogoutRequest(idp, 'redirect', req.body);
 
 			const authService = new AuthenticationService({ accountability: req.accountability, schema: req.schema });
@@ -157,7 +157,7 @@ export function createSAMLAuthRouter(providerName: string) {
 
 			if (req.cookies[sessionCookieName]) {
 				await authService.logout(req.cookies[sessionCookieName]);
-				res.clearCookie(sessionCookieName, SESSION_COOKIE_OPTIONS);
+				res.clearCookie(sessionCookieName, constants.SESSION_COOKIE_OPTIONS);
 			}
 
 			return res.redirect(context);
@@ -175,7 +175,7 @@ export function createSAMLAuthRouter(providerName: string) {
 			const authMode = (env[`AUTH_${providerName.toUpperCase()}_MODE`] ?? 'session') as string;
 
 			try {
-				const { sp, idp } = getAuthProvider(providerName) as SAMLAuthDriver;
+				const { sp, idp } = await getAuthProvider(providerName) as SAMLAuthDriver;
 				const { extract } = await sp.parseLoginResponse(idp, 'post', req);
 
 				const authService = new AuthenticationService({ accountability: req.accountability, schema: req.schema });
@@ -194,9 +194,9 @@ export function createSAMLAuthRouter(providerName: string) {
 
 				if (relayState) {
 					if (authMode === 'session') {
-						res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, SESSION_COOKIE_OPTIONS);
+						res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, constants.SESSION_COOKIE_OPTIONS);
 					} else {
-						res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, REFRESH_COOKIE_OPTIONS);
+						res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, constants.REFRESH_COOKIE_OPTIONS);
 					}
 
 					return res.redirect(relayState);

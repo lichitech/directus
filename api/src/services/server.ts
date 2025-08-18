@@ -7,7 +7,7 @@ import { merge } from 'lodash-es';
 import { Readable } from 'node:stream';
 import { performance } from 'perf_hooks';
 import { getCache } from '../cache.js';
-import { RESUMABLE_UPLOADS } from '../constants.js';
+import { constants } from '../constants.js';
 import getDatabase, { hasDatabaseConnection } from '../database/index.js';
 import { useLogger } from '../logger/index.js';
 import getMailer from '../mailer.js';
@@ -121,9 +121,9 @@ export class ServerService {
 				info['websocket'] = false;
 			}
 
-			if (RESUMABLE_UPLOADS.ENABLED) {
+			if (constants.RESUMABLE_UPLOADS.ENABLED) {
 				info['uploads'] = {
-					chunkSize: RESUMABLE_UPLOADS.CHUNK_SIZE,
+					chunkSize: constants.RESUMABLE_UPLOADS.CHUNK_SIZE,
 				};
 			}
 

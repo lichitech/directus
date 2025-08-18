@@ -30,7 +30,7 @@ import { getSchema } from '../utils/get-schema.js';
 import { transaction } from '../utils/transaction.js';
 import { ItemsService } from './items.js';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 export class RelationsService {
 	knex: Knex;

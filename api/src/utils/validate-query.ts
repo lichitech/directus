@@ -6,7 +6,7 @@ import { isPlainObject, uniq } from 'lodash-es';
 import { stringify } from 'wellknown';
 import { calculateFieldDepth } from './calculate-field-depth.js';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 const querySchema = Joi.object({
 	fields: Joi.array().items(Joi.string()),

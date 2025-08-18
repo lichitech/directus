@@ -9,7 +9,7 @@ import { supportsTus } from '@directus/storage';
 import type { Accountability, File, SchemaOverview } from '@directus/types';
 import { toArray } from '@directus/utils';
 import { Server, EVENTS } from '@tus/server';
-import { RESUMABLE_UPLOADS } from '../../constants.js';
+import { constants } from '../../constants.js';
 import { getStorage } from '../../storage/index.js';
 import { extractMetadata } from '../files/lib/extract-metadata.js';
 import { ItemsService } from '../index.js';
@@ -35,7 +35,7 @@ async function createTusStore(context: Context) {
 	}
 
 	return new TusDataStore({
-		constants: RESUMABLE_UPLOADS,
+		constants: constants.RESUMABLE_UPLOADS,
 		accountability: context.accountability,
 		schema: context.schema,
 		location,
@@ -51,7 +51,7 @@ export async function createTusServer(context: Context): Promise<[Server, () => 
 		path: '/files/tus',
 		datastore: store,
 		locker: getTusLocker(),
-		...(RESUMABLE_UPLOADS.MAX_SIZE !== null && { maxSize: RESUMABLE_UPLOADS.MAX_SIZE }),
+		...(constants.RESUMABLE_UPLOADS.MAX_SIZE !== null && { maxSize: constants.RESUMABLE_UPLOADS.MAX_SIZE }),
 		async onUploadFinish(req: any, res, upload) {
 			const service = new ItemsService<File>('directus_files', {
 				schema: req.schema,

@@ -19,7 +19,7 @@ import asyncHandler from '../utils/async-handler.js';
 import { sanitizeQuery } from '../utils/sanitize-query.js';
 
 const router = express.Router();
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 router.use(useCollection('directus_files'));
 

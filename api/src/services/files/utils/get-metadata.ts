@@ -13,7 +13,7 @@ import { extract as extractOEmbed } from '@extractus/oembed-extractor';
 import { decodeHTML } from 'entities';
 import { parseFavicon } from 'parse-favicon';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 const logger = useLogger();
 
 export type Metadata = Partial<Pick<File, 'height' | 'width' | 'description' | 'title' | 'tags' | 'metadata'>>;

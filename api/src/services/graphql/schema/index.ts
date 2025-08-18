@@ -48,7 +48,7 @@ export const SYSTEM_DENY_LIST = [
 
 export const READ_ONLY = ['directus_activity', 'directus_revisions'];
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 const semaphore = new Semaphore((env['GRAPHQL_SCHEMA_GENERATION_MAX_CONCURRENT'] as number) ?? 5);
 
 /**

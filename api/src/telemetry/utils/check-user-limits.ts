@@ -2,7 +2,7 @@ import { useEnv } from '@directus/env';
 import { LimitExceededError } from '@directus/errors';
 import { type UserCount } from '../../utils/fetch-user-count/fetch-user-count.js';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 /**
  * Ensure that user limits are not reached

@@ -48,7 +48,7 @@ import { PayloadService } from './payload.js';
 import { RelationsService } from './relations.js';
 
 const systemFieldRows = getSystemFieldRowsWithAuthProviders();
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 export class FieldsService {
 	knex: Knex;

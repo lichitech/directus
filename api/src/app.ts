@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnvTenant, useEnv } from '@directus/env';
 import { InvalidPayloadError, ServiceUnavailableError } from '@directus/errors';
 import { handlePressure } from '@directus/pressure';
 import cookieParser from 'cookie-parser';
@@ -10,7 +10,7 @@ import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'path';
 import qs from 'qs';
-import { registerAuthProviders } from './auth.js';
+
 import accessRouter from './controllers/access.js';
 import activityRouter from './controllers/activity.js';
 import assetsRouter from './controllers/assets.js';
@@ -46,6 +46,7 @@ import usersRouter from './controllers/users.js';
 import utilsRouter from './controllers/utils.js';
 import versionsRouter from './controllers/versions.js';
 import webhooksRouter from './controllers/webhooks.js';
+import { multiTenant } from './multi-tenant.js';
 import {
 	isInstalled,
 	validateDatabaseConnection,
@@ -74,6 +75,26 @@ import { Url } from './utils/url.js';
 import { validateStorage } from './utils/validate-storage.js';
 
 const require = createRequire(import.meta.url);
+
+async function initializeSchedules() {
+	const logger = useLogger();
+	logger.info('Initializing schedules...');
+
+	const scheduleInitializers = [
+		retentionSchedule,
+		telemetrySchedule,
+		tusSchedule,
+		metricsSchedule
+	];
+
+	await useEnvTenant.runAll(async () => {
+		logger.info(`Initializing schedules for tenant "${useEnvTenant.getTenantID()}"...`);
+
+		for (const schedule of scheduleInitializers) {
+			await schedule();
+		}
+	});
+}
 
 export default async function createApp(): Promise<express.Application> {
 	const env = useEnv();
@@ -104,8 +125,6 @@ export default async function createApp(): Promise<express.Application> {
 	await validateDatabaseExtensions();
 	await validateStorage();
 
-	await registerAuthProviders();
-
 	const extensionManager = getExtensionManager();
 	const flowManager = getFlowManager();
 
@@ -113,6 +132,8 @@ export default async function createApp(): Promise<express.Application> {
 	await flowManager.initialize();
 
 	const app = express();
+
+	app.use(multiTenant);
 
 	app.disable('x-powered-by');
 	app.set('trust proxy', env['IP_TRUST_PROXY']);
@@ -329,10 +350,7 @@ export default async function createApp(): Promise<express.Application> {
 
 	await emitter.emitInit('routes.after', { app });
 
-	await retentionSchedule();
-	await telemetrySchedule();
-	await tusSchedule();
-	await metricsSchedule();
+	await initializeSchedules();
 
 	await emitter.emitInit('app.after', { app });
 

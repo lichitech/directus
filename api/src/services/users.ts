@@ -30,7 +30,7 @@ import { ItemsService } from './items.js';
 import { MailService } from './mail/index.js';
 import { SettingsService } from './settings.js';
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 const logger = useLogger();
 
 export class UsersService extends ItemsService {

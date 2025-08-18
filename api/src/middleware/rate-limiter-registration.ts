@@ -11,7 +11,7 @@ let checkRateLimit: RequestHandler = (_req, _res, next) => next();
 
 export let rateLimiter: RateLimiterRedis | RateLimiterMemory;
 
-const env = useEnv();
+const env = useEnv(); // TODO: 适配多租户
 
 if (env['RATE_LIMITER_REGISTRATION_ENABLED'] === true) {
 	validateEnv(['RATE_LIMITER_REGISTRATION_DURATION', 'RATE_LIMITER_REGISTRATION_POINTS']);
