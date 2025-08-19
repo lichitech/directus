@@ -36,9 +36,8 @@ async function runAll(callback: () => unknown) {
 	}
 }
 
-export const useEnvTenant = {
-	getEnvMap,
-	getTenantID,
-	run: envTenantStorage.run,
-	runAll,
+async function run(store: string, callback: () => unknown) {
+	return envTenantStorage.run(store, callback);
 }
+
+export const useEnvTenant = { getEnvMap, getTenantID, run, runAll, }
