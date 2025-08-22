@@ -13,15 +13,17 @@ import { extract as extractOEmbed } from '@extractus/oembed-extractor';
 import { decodeHTML } from 'entities';
 import { parseFavicon } from 'parse-favicon';
 
-const env = useEnv(); // TODO: 适配多租户
 const logger = useLogger();
 
 export type Metadata = Partial<Pick<File, 'height' | 'width' | 'description' | 'title' | 'tags' | 'metadata'>>;
 
 export async function getMetadata(
 	stream: Readable,
-	allowList: string | string[] = env['FILE_METADATA_ALLOW_LIST'] as string[],
+	allowList?: string | string[],
 ): Promise<Metadata> {
+	const env = useEnv();
+	allowList = allowList ?? env['FILE_METADATA_ALLOW_LIST'] as string[]
+
 	const transformer = getSharpInstance();
 
 	return new Promise((resolve) => {

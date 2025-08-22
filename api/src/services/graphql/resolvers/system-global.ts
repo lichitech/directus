@@ -14,7 +14,7 @@ import {
 import { SchemaComposer } from 'graphql-compose';
 import { clearSystemCache, getCache } from '../../../cache.js';
 import { DEFAULT_AUTH_PROVIDER, constants } from '../../../constants.js';
-import { rateLimiter } from '../../../middleware/rate-limiter-registration.js';
+import { getRateLimiter } from '../../../middleware/rate-limiter-registration.js';
 import { createDefaultAccountability } from '../../../permissions/utils/create-default-accountability.js';
 import type { AuthenticationMode } from '../../../types/index.js';
 import { generateHash } from '../../../utils/generate-hash.js';
@@ -30,8 +30,6 @@ import { UtilsService } from '../../utils.js';
 import { GraphQLService } from '../index.js';
 import { GraphQLBigInt } from '../types/bigint.js';
 import { GraphQLVoid } from '../types/void.js';
-
-const env = useEnv(); // TODO: 适配多租户
 
 /**
  * Globally available mutations
@@ -65,6 +63,7 @@ export function globalResolvers(gql: GraphQLService, schemaComposer: SchemaCompo
 				otp: GraphQLString,
 			},
 			resolve: async (_, args, { req, res }) => {
+				const env = useEnv();
 				const accountability: Accountability = createDefaultAccountability();
 
 				if (req?.ip) accountability.ip = req.ip;
@@ -113,6 +112,7 @@ export function globalResolvers(gql: GraphQLService, schemaComposer: SchemaCompo
 				mode: AuthMode,
 			},
 			resolve: async (_, args, { req, res }) => {
+				const env = useEnv();
 				const accountability: Accountability = createDefaultAccountability();
 
 				if (req?.ip) accountability.ip = req.ip;
@@ -180,6 +180,7 @@ export function globalResolvers(gql: GraphQLService, schemaComposer: SchemaCompo
 				mode: AuthMode,
 			},
 			resolve: async (_, args, { req, res }) => {
+				const env = useEnv();
 				const accountability: Accountability = createDefaultAccountability();
 
 				if (req?.ip) accountability.ip = req.ip;
@@ -464,7 +465,7 @@ export function globalResolvers(gql: GraphQLService, schemaComposer: SchemaCompo
 				const ip = req ? getIPFromReq(req) : null;
 
 				if (ip) {
-					await rateLimiter.consume(ip);
+					await getRateLimiter()?.consume(ip);
 				}
 
 				await service.registerUser({

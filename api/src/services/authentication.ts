@@ -27,8 +27,6 @@ import { ActivityService } from './activity.js';
 import { SettingsService } from './settings.js';
 import { TFAService } from './tfa.js';
 
-const env = useEnv(); // TODO: 适配多租户
-
 const loginAttemptsLimiter = createRateLimiter('RATE_LIMITER', { duration: 0 });
 
 export class AuthenticationService {
@@ -58,6 +56,7 @@ export class AuthenticationService {
 			session: boolean;
 		}>,
 	): Promise<LoginResult> {
+		const env = useEnv();
 		const { nanoid } = await import('nanoid');
 
 		const STALL_TIME = env['LOGIN_STALL_TIME'] as number;
@@ -261,6 +260,7 @@ export class AuthenticationService {
 	}
 
 	async refresh(refreshToken: string, options?: Partial<{ session: boolean }>): Promise<LoginResult> {
+		const env = useEnv();
 		const { nanoid } = await import('nanoid');
 		const STALL_TIME = env['LOGIN_STALL_TIME'] as number;
 		const timeStart = performance.now();
@@ -439,6 +439,7 @@ export class AuthenticationService {
 		}
 
 		// Keep the old session active for a short period of time
+		const env = useEnv();
 		const GRACE_PERIOD = getMilliseconds(env['SESSION_REFRESH_GRACE_PERIOD'], 10_000);
 
 		// Update the existing session record to have a short safety timeout

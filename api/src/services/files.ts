@@ -29,7 +29,6 @@ import { getStorage } from '../storage/index.js';
 import { extractMetadata, extractEmbedMetadata } from './files/lib/extract-metadata.js';
 import { ItemsService } from './items.js';
 
-const env = useEnv(); // TODO: 适配多租户
 const logger = useLogger();
 
 export class FilesService extends ItemsService<File> {
@@ -232,6 +231,7 @@ export class FilesService extends ItemsService<File> {
 		}
 
 		const encodedURL = encodeURL(importURL);
+		const env = useEnv();
 
 		if (isEmbed) {
 			let payload = {

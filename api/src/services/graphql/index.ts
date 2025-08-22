@@ -19,7 +19,7 @@ import { generateSchema } from './schema/index.js';
 import { addPathToValidationError } from './utils/add-path-to-validation-error.js';
 import processError from './utils/process-error.js';
 
-const env = useEnv(); // TODO: 适配多租户
+const env = useEnv();
 
 const validationRules = Array.from(specifiedRules);
 

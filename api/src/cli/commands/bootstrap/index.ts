@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv, useEnvTenant } from '@directus/env';
 import type { SchemaOverview } from '@directus/types';
 import type { Knex } from 'knex';
 import getDatabase, {
@@ -9,7 +9,6 @@ import getDatabase, {
 import runMigrations from '../../../database/migrations/run.js';
 import installDatabase from '../../../database/seeds/run.js';
 import { useLogger } from '../../../logger/index.js';
-import { useEnvTenant } from '@directus/env';
 import { AccessService } from '../../../services/access.js';
 import { PoliciesService } from '../../../services/policies.js';
 import { RolesService } from '../../../services/roles.js';
@@ -27,8 +26,8 @@ export default async function bootstrap({ skipAdminInit, tenant }: { skipAdminIn
 		logger.info(`Bootstrapping tenant "${tenant}"...`);
 		await runBootstrap(skipAdminInit);
 	} else {
-		await useEnvTenant.runAll(async () => {
-			logger.info(`Bootstrapping tenant "${useEnvTenant.getTenantID()}"...`);
+		await useEnvTenant.runAll(async ({ tenantID }) => {
+			logger.info(`Bootstrapping tenant "${tenantID}"...`);
 			await runBootstrap(skipAdminInit);
 		});
 	}

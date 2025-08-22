@@ -9,7 +9,6 @@ import { ItemsService } from './items.js';
 import { MailService } from './mail/index.js';
 import { UsersService } from './users.js';
 
-const env = useEnv(); // TODO: 适配多租户
 const logger = useLogger();
 
 export class NotificationsService extends ItemsService {
@@ -34,6 +33,8 @@ export class NotificationsService extends ItemsService {
 			});
 
 			if (user['email'] && user['email_notifications'] === true) {
+				const env = useEnv();
+
 				const manageUserAccountUrl = new Url(env['PUBLIC_URL'] as string)
 					.addPath('admin', 'users', user['id'])
 					.toString();

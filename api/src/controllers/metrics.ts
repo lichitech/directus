@@ -4,7 +4,6 @@ import { Router } from 'express';
 import { useMetrics } from '../metrics/index.js';
 import asyncHandler from '../utils/async-handler.js';
 
-const env = useEnv(); // TODO: 适配多租户
 const router = Router();
 const metrics = useMetrics();
 
@@ -15,6 +14,7 @@ router.get(
 			return next();
 		}
 
+		const env = useEnv();
 		// support Bearer Token of type `Metrics`
 		const metricTokens = env['METRICS_TOKENS'] as string[] | undefined;
 

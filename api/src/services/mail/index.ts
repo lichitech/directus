@@ -14,7 +14,7 @@ import { useLogger } from '../../logger/index.js';
 import getMailer from '../../mailer.js';
 import { Url } from '../../utils/url.js';
 
-const env = useEnv(); // TODO: 适配多租户
+const env = useEnv();
 const logger = useLogger();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

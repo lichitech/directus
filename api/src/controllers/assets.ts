@@ -19,8 +19,6 @@ import { getMilliseconds } from '../utils/get-milliseconds.js';
 
 const router = Router();
 
-const env = useEnv(); // TODO: 适配多租户
-
 router.use(useCollection('directus_files'));
 
 router.get(
@@ -63,6 +61,8 @@ router.get(
 					reason: `"transforms" Parameter needs to be a JSON array of allowed transformations`,
 				});
 			}
+
+			const env = useEnv();
 
 			// Check against ASSETS_TRANSFORM_MAX_OPERATIONS
 			if (transforms.length > Number(env['ASSETS_TRANSFORM_MAX_OPERATIONS'])) {
@@ -203,6 +203,7 @@ router.get(
 
 		const { stream, file, stat } = await service.getAsset(id, { transformationParams, acceptFormat }, range, true);
 
+		const env = useEnv();
 		const filename = req.params['filename'] ?? file.filename_download;
 		res.attachment(filename);
 		res.setHeader('Content-Type', file.type);

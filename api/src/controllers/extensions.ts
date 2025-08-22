@@ -25,7 +25,6 @@ import { getMilliseconds } from '../utils/get-milliseconds.js';
 import type { ReadStream } from 'node:fs';
 
 const router = express.Router();
-const env = useEnv(); // TODO: 适配多租户
 
 router.use(useCollection('directus_extensions'));
 
@@ -94,6 +93,8 @@ router.get(
 			query.sort = sort[0];
 		}
 
+		const env = useEnv();
+
 		if (env['MARKETPLACE_TRUST'] === 'sandbox') {
 			query.sandbox = true;
 		}
@@ -120,6 +121,7 @@ router.get(
 		}
 
 		const options: AccountOptions = {};
+		const env = useEnv();
 
 		if (env['MARKETPLACE_REGISTRY'] && typeof env['MARKETPLACE_REGISTRY'] === 'string') {
 			options.registry = env['MARKETPLACE_REGISTRY'];
@@ -141,6 +143,7 @@ router.get(
 		}
 
 		const options: DescribeOptions = {};
+		const env = useEnv();
 
 		if (env['MARKETPLACE_REGISTRY'] && typeof env['MARKETPLACE_REGISTRY'] === 'string') {
 			options.registry = env['MARKETPLACE_REGISTRY'];
@@ -308,6 +311,8 @@ router.get(
 		}
 
 		res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+
+		const env = useEnv();
 
 		res.setHeader(
 			'Cache-Control',

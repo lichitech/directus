@@ -31,8 +31,6 @@ import { getRelationType } from '../utils/get-relation-type.js';
 import { reduceSchema } from '../utils/reduce-schema.js';
 import { GraphQLService } from './graphql/index.js';
 
-const env = useEnv(); // TODO: 适配多租户
-
 export class SpecificationService {
 	accountability: Accountability | null;
 	knex: Knex;
@@ -68,6 +66,7 @@ class OASSpecsService implements SpecificationSubService {
 	}
 
 	async generate(host?: string) {
+		const env = useEnv();
 		let schemaForSpec = this.schema;
 		let permissions: Permission[] = [];
 

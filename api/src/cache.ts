@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv, useEnvTenant } from '@directus/env';
 import type { SchemaOverview } from '@directus/types';
 import Keyv, { type KeyvOptions } from 'keyv';
 import { useBus } from './bus/index.js';
@@ -14,7 +14,6 @@ import { createRequire } from 'node:module';
 import { freezeSchema, unfreezeSchema } from './utils/freeze-schema.js';
 
 const logger = useLogger();
-const env = useEnv(); // TODO: 适配多租户
 
 const require = createRequire(import.meta.url);
 
@@ -42,6 +41,8 @@ if (redisConfigAvailable() && !messengerSubscribed) {
 	messengerSubscribed = true;
 
 	messenger.subscribe<CacheMessage>('schemaChanged', async (opts) => {
+		const env = useEnv();
+
 		if (env['CACHE_STORE'] === 'memory' && env['CACHE_AUTO_PURGE'] && cache && opts?.['autoPurgeCache'] !== false) {
 			await cache.clear();
 		}
@@ -57,6 +58,8 @@ export function getCache(): {
 	localSchemaCache: Keyv;
 	lockCache: Keyv;
 } {
+	const env = useEnv();
+
 	if (env['CACHE_ENABLED'] === true && cache === null) {
 		validateEnv(['CACHE_NAMESPACE', 'CACHE_TTL', 'CACHE_STORE']);
 		cache = getKeyvInstance(env['CACHE_STORE'] as Store, getMilliseconds(env['CACHE_TTL']));
@@ -132,6 +135,8 @@ export function setMemorySchemaCache(schema: SchemaOverview) {
 }
 
 export function getMemorySchemaCache(): Readonly<SchemaOverview> | undefined {
+	const env = useEnv();
+
 	if (env['CACHE_SCHEMA_FREEZE_ENABLED']) {
 		return memorySchemaCache ?? undefined;
 	} else if (memorySchemaCache) {
@@ -169,8 +174,10 @@ function getKeyvInstance(store: Store, ttl: number | undefined, namespaceSuffix?
 }
 
 function getConfig(store: Store = 'memory', ttl: number | undefined, namespaceSuffix = ''): KeyvOptions {
+	const env = useEnv();
+
 	const config: KeyvOptions = {
-		namespace: `${env['CACHE_NAMESPACE']}${namespaceSuffix}`,
+		namespace: `${env['CACHE_NAMESPACE']}:${useEnvTenant.getTenantID()}${namespaceSuffix}`,
 		...(ttl && { ttl }),
 	};
 

@@ -13,7 +13,6 @@ import asyncHandler from '../utils/async-handler.js';
 import { sanitizeQuery } from '../utils/sanitize-query.js';
 
 const router = express.Router();
-const env = useEnv(); // TODO: 适配多租户
 
 router.use(useCollection('directus_shares'));
 
@@ -49,6 +48,8 @@ router.post(
 			payload.refresh_token = refreshToken;
 			payload.access_token = accessToken;
 		}
+
+		const env = useEnv();
 
 		if (mode === 'cookie') {
 			res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, constants.REFRESH_COOKIE_OPTIONS);

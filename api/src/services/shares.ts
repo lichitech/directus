@@ -18,7 +18,6 @@ import { ItemsService } from './items.js';
 import { MailService } from './mail/index.js';
 import { UsersService } from './users.js';
 
-const env = useEnv(); // TODO: 适配多租户
 const logger = useLogger();
 
 export class SharesService extends ItemsService {
@@ -105,6 +104,7 @@ export class SharesService extends ItemsService {
 		};
 
 		const refreshToken = nanoid(64);
+		const env = useEnv();
 		const refreshTokenExpiration = new Date(Date.now() + getMilliseconds(env['REFRESH_TOKEN_TTL'], 0));
 
 		if (options?.session) {
@@ -143,6 +143,7 @@ export class SharesService extends ItemsService {
 	async invite(payload: { emails: string[]; share: PrimaryKey }) {
 		if (!this.accountability?.user) throw new ForbiddenError();
 
+		const env = useEnv();
 		const share = await this.readOne(payload.share, { fields: ['collection'] });
 
 		const usersService = new UsersService({

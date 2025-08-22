@@ -3,8 +3,6 @@ import type { Knex } from 'knex';
 import { getDefaultIndexName } from '../../../../utils/get-default-index-name.js';
 import { SchemaHelper, type SortRecord } from '../types.js';
 
-const env = useEnv(); // TODO: 适配多租户
-
 export class SchemaHelperMySQL extends SchemaHelper {
 	override generateIndexName(
 		type: 'unique' | 'foreign' | 'index',
@@ -15,6 +13,8 @@ export class SchemaHelperMySQL extends SchemaHelper {
 	}
 
 	override async getDatabaseSize(): Promise<number | null> {
+		const env = useEnv();
+
 		try {
 			const result = (await this.knex
 				.sum('size AS size')

@@ -255,6 +255,7 @@ export async function hasDatabaseConnection(database?: Knex): Promise<boolean> {
 export async function validateDatabaseConnection(database?: Knex): Promise<void> {
 	database = database ?? getDatabase();
 	const logger = useLogger();
+	const tenantID = useEnvTenant.getTenantID()
 
 	try {
 		if (getDatabaseClient(database) === 'oracle') {
@@ -263,7 +264,7 @@ export async function validateDatabaseConnection(database?: Knex): Promise<void>
 			await database.raw('SELECT 1');
 		}
 	} catch (error: any) {
-		logger.error(`Can't connect to the database.`);
+		logger.error(`[${tenantID}] Can't connect to the database.`);
 		logger.error(error);
 		process.exit(1);
 	}

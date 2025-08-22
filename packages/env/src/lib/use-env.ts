@@ -24,15 +24,19 @@ function getEnvMap() {
 	return _cache.env
 }
 
-export function useEnv() {
-	return getEnvMap().get(getTenantID()) ?? {}
+export function useEnv(tenantID?: string) {
+	return getEnvMap().get(tenantID ?? getTenantID()) ?? {}
 }
 
-async function runAll(callback: () => unknown) {
-	const tenantIDs = getEnvMap().keys();
+type Context = { tenantID: string, env: Env }
 
-	for (const tenantID of tenantIDs) {
-		await envTenantStorage.run(tenantID, callback)
+async function runAll(
+	callback: (context: Context) => unknown,
+	context?: Context
+) {
+	for (const [tenantID, env] of getEnvMap()) {
+		const _context = context ?? { tenantID, env }
+		await envTenantStorage.run(tenantID, () => callback(_context))
 	}
 }
 
@@ -40,4 +44,4 @@ async function run(store: string, callback: () => unknown) {
 	return envTenantStorage.run(store, callback);
 }
 
-export const useEnvTenant = { getEnvMap, getTenantID, run, runAll, }
+export const useEnvTenant = { getTenantID, run, runAll, }

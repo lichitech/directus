@@ -35,8 +35,6 @@ import { validateKeys } from '../utils/validate-keys.js';
 import { validateUserCountIntegrity } from '../utils/validate-user-count-integrity.js';
 import { PayloadService } from './payload.js';
 
-const env = useEnv(); // TODO: 适配多租户
-
 export class ItemsService<Item extends AnyItem = AnyItem, Collection extends string = string>
 	implements AbstractService<Item>
 {
@@ -86,6 +84,7 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	}
 
 	createMutationTracker(initialCount = 0): MutationTracker {
+		const env = useEnv();
 		const maxCount = Number(env['MAX_BATCH_MUTATION']);
 		let mutationCount = initialCount;
 		return {

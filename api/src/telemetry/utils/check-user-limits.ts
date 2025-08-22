@@ -2,12 +2,12 @@ import { useEnv } from '@directus/env';
 import { LimitExceededError } from '@directus/errors';
 import { type UserCount } from '../../utils/fetch-user-count/fetch-user-count.js';
 
-const env = useEnv(); // TODO: 适配多租户
-
 /**
  * Ensure that user limits are not reached
  */
 export async function checkUserLimits(userCounts: UserCount): Promise<void> {
+	const env = useEnv();
+
 	if (userCounts.admin > Number(env['USERS_ADMIN_ACCESS_LIMIT'])) {
 		throw new LimitExceededError({ category: 'Active Admin users' });
 	}

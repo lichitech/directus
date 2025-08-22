@@ -20,14 +20,26 @@ vi.mock('./mail', () => {
 	return { MailService };
 });
 
-vi.mock('@directus/env', () => ({
-	useEnv: vi.fn().mockReturnValue({
+vi.mock(import('@directus/env'), async (importOriginal) => {
+	const { useEnvTenant, ...actual } = await importOriginal()
+
+	const mockEnv = {
 		EMAIL_TEMPLATES_PATH: './templates',
 		USERS_ADMIN_ACCESS_LIMIT: 3,
 		USERS_APP_ACCESS_LIMIT: 3,
 		USERS_API_ACCESS_LIMIT: 3,
-	}),
-}));
+	}
+
+	useEnvTenant.runAll = vi.fn().mockImplementation((callback) => {
+		callback({ env: mockEnv, tenantID: "" })
+	})
+
+	return {
+		...actual,
+		useEnvTenant,
+		useEnv: vi.fn().mockReturnValue(mockEnv),
+	}
+});
 
 vi.mock('../permissions/modules/validate-remaining-admin/validate-remaining-admin-users.js');
 

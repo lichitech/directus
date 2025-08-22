@@ -34,7 +34,7 @@ import * as TransformationUtils from '../utils/transformations.js';
 import { FilesService } from './files.js';
 import { getSharpInstance } from './files/lib/get-sharp-instance.js';
 
-const env = useEnv(); // TODO: 适配多租户
+const env = useEnv();
 const logger = useLogger();
 
 export class AssetsService {

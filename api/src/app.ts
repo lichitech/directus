@@ -3,7 +3,7 @@ import { InvalidPayloadError, ServiceUnavailableError } from '@directus/errors';
 import { handlePressure } from '@directus/pressure';
 import cookieParser from 'cookie-parser';
 import type { Request, RequestHandler, Response } from 'express';
-import express from 'express';
+import express, { type Express } from 'express';
 import type { ServerResponse } from 'http';
 import { merge } from 'lodash-es';
 import { readFile } from 'node:fs/promises';
@@ -76,88 +76,50 @@ import { validateStorage } from './utils/validate-storage.js';
 
 const require = createRequire(import.meta.url);
 
-async function initializeSchedules() {
-	const logger = useLogger();
-	logger.info('Initializing schedules...');
-
-	const scheduleInitializers = [
-		retentionSchedule,
-		telemetrySchedule,
-		tusSchedule,
-		metricsSchedule
-	];
+export default async function createApp(): Promise<express.Application> {
+	await validate();
 
 	await useEnvTenant.runAll(async () => {
-		logger.info(`Initializing schedules for tenant "${useEnvTenant.getTenantID()}"...`);
+		const extensionManager = getExtensionManager();
+		const flowManager = getFlowManager();
 
-		for (const schedule of scheduleInitializers) {
-			await schedule();
-		}
-	});
-}
-
-export default async function createApp(): Promise<express.Application> {
-	const env = useEnv();
-	const logger = useLogger();
-	const helmet = await import('helmet');
-
-	await validateDatabaseConnection();
-
-	if ((await isInstalled()) === false) {
-		logger.error(`Database doesn't have Directus tables installed.`);
-		process.exit(1);
-	}
-
-	if ((await validateMigrations()) === false) {
-		logger.warn(`Database migrations have not all been run`);
-	}
-
-	if (!env['SECRET']) {
-		logger.warn(
-			`"SECRET" env variable is missing. Using a random value instead. Tokens will not persist between restarts. This is not appropriate for production usage.`,
-		);
-	}
-
-	if (!new Url(env['PUBLIC_URL'] as string).isAbsolute()) {
-		logger.warn('"PUBLIC_URL" should be a full URL');
-	}
-
-	await validateDatabaseExtensions();
-	await validateStorage();
-
-	const extensionManager = getExtensionManager();
-	const flowManager = getFlowManager();
-
-	await extensionManager.initialize();
-	await flowManager.initialize();
+		await extensionManager.initialize();
+		await flowManager.initialize();
+	})
 
 	const app = express();
 
+	initializeAppSetting(app);
+
 	app.use(multiTenant);
 
-	app.disable('x-powered-by');
-	app.set('trust proxy', env['IP_TRUST_PROXY']);
-	app.set('query parser', (str: string) => qs.parse(str, { depth: Number(env['QUERYSTRING_MAX_PARSE_DEPTH']) }));
+	app.use(
+		(req, resp, next) => {
+			const env = useEnv()
 
-	if (env['PRESSURE_LIMITER_ENABLED']) {
-		const sampleInterval = Number(env['PRESSURE_LIMITER_SAMPLE_INTERVAL']);
+			if (env['PRESSURE_LIMITER_ENABLED']) {
+				const sampleInterval = Number(env['PRESSURE_LIMITER_SAMPLE_INTERVAL']);
 
-		if (Number.isNaN(sampleInterval) === true || Number.isFinite(sampleInterval) === false) {
-			throw new Error(`Invalid value for PRESSURE_LIMITER_SAMPLE_INTERVAL environment variable`);
+				if (Number.isNaN(sampleInterval) === true || Number.isFinite(sampleInterval) === false) {
+					throw new Error(`Invalid value for PRESSURE_LIMITER_SAMPLE_INTERVAL environment variable`);
+				}
+
+				handlePressure({
+					sampleInterval,
+					maxEventLoopUtilization: env['PRESSURE_LIMITER_MAX_EVENT_LOOP_UTILIZATION'] as number,
+					maxEventLoopDelay: env['PRESSURE_LIMITER_MAX_EVENT_LOOP_DELAY'] as number,
+					maxMemoryRss: env['PRESSURE_LIMITER_MAX_MEMORY_RSS'] as number,
+					maxMemoryHeapUsed: env['PRESSURE_LIMITER_MAX_MEMORY_HEAP_USED'] as number,
+					error: new ServiceUnavailableError({ service: 'api', reason: 'Under pressure' }),
+					retryAfter: env['PRESSURE_LIMITER_RETRY_AFTER'] as string,
+				})(req, resp, next)
+			} else {
+				next()
+			}
 		}
+	);
 
-		app.use(
-			handlePressure({
-				sampleInterval,
-				maxEventLoopUtilization: env['PRESSURE_LIMITER_MAX_EVENT_LOOP_UTILIZATION'] as number,
-				maxEventLoopDelay: env['PRESSURE_LIMITER_MAX_EVENT_LOOP_DELAY'] as number,
-				maxMemoryRss: env['PRESSURE_LIMITER_MAX_MEMORY_RSS'] as number,
-				maxMemoryHeapUsed: env['PRESSURE_LIMITER_MAX_MEMORY_HEAP_USED'] as number,
-				error: new ServiceUnavailableError({ service: 'api', reason: 'Under pressure' }),
-				retryAfter: env['PRESSURE_LIMITER_RETRY_AFTER'] as string,
-			}),
-		);
-	}
+	const helmet = await import('helmet');
 
 	app.use(
 		helmet.contentSecurityPolicy(
@@ -191,9 +153,16 @@ export default async function createApp(): Promise<express.Application> {
 		),
 	);
 
-	if (env['HSTS_ENABLED']) {
-		app.use(helmet.hsts(getConfigFromEnv('HSTS_', { omitPrefix: 'HSTS_ENABLED' })));
-	}
+	app.use((req, resp, next) => {
+		const env = useEnv()
+
+		if (env['HSTS_ENABLED']) {
+			const handler = helmet.hsts(getConfigFromEnv('HSTS_', { omitPrefix: 'HSTS_ENABLED' }))
+			handler(req, resp, next)
+		} else {
+			next()
+		}
+	});
 
 	await emitter.emitInit('app.before', { app });
 
@@ -206,16 +175,16 @@ export default async function createApp(): Promise<express.Application> {
 		next();
 	});
 
-	if (env['CORS_ENABLED'] === true) {
-		app.use(cors);
-	}
+	app.use(cors);
 
 	app.use((req, res, next) => {
-		(
-			express.json({
-				limit: env['MAX_PAYLOAD_SIZE'] as string,
-			}) as RequestHandler
-		)(req, res, (err: any) => {
+		const env = useEnv()
+
+		const handler = express.json({
+			limit: env['MAX_PAYLOAD_SIZE'] as string,
+		}) as RequestHandler
+
+		handler(req, res, (err: any) => {
 			if (err) {
 				return next(new InvalidPayloadError({ reason: err.message }));
 			}
@@ -229,6 +198,8 @@ export default async function createApp(): Promise<express.Application> {
 	app.use(extractToken);
 
 	app.get('/', (_req, res, next) => {
+		const env = useEnv()
+
 		if (env['ROOT_REDIRECT']) {
 			res.redirect(env['ROOT_REDIRECT'] as string);
 		} else {
@@ -237,49 +208,19 @@ export default async function createApp(): Promise<express.Application> {
 	});
 
 	app.get('/robots.txt', (_, res) => {
+		const env = useEnv()
+
 		res.set('Content-Type', 'text/plain');
 		res.status(200);
 		res.send(env['ROBOTS_TXT']);
 	});
 
-	if (env['SERVE_APP']) {
-		const adminPath = require.resolve('@directus/app');
-		const adminUrl = new Url(env['PUBLIC_URL'] as string).addPath('admin');
-
-		const embeds = extensionManager.getEmbeds();
-
-		// Set the App's base path according to the APIs public URL
-		const html = await readFile(adminPath, 'utf8');
-
-		const htmlWithVars = html
-			.replace(/<base \/>/, `<base href="${adminUrl.toString({ rootRelative: true })}/" />`)
-			.replace('<!-- directus-embed-head -->', embeds.head)
-			.replace('<!-- directus-embed-body -->', embeds.body);
-
-		const sendHtml = (_req: Request, res: Response) => {
-			res.setHeader('Cache-Control', 'no-cache');
-			res.setHeader('Vary', 'Origin, Cache-Control');
-			res.send(htmlWithVars);
-		};
-
-		const setStaticHeaders = (res: ServerResponse) => {
-			res.setHeader('Cache-Control', 'max-age=31536000, immutable');
-			res.setHeader('Vary', 'Origin, Cache-Control');
-		};
-
-		app.get('/admin', sendHtml);
-		app.use('/admin', express.static(path.join(adminPath, '..'), { setHeaders: setStaticHeaders }));
-		app.use('/admin/*', sendHtml);
-	}
+	await initializeAdminApp(app);
 
 	// use the rate limiter - all routes for now
-	if (env['RATE_LIMITER_GLOBAL_ENABLED'] === true) {
-		app.use(rateLimiterGlobal);
-	}
+	app.use(rateLimiterGlobal);
 
-	if (env['RATE_LIMITER_ENABLED'] === true) {
-		app.use(rateLimiter);
-	}
+	app.use(rateLimiter);
 
 	app.get('/server/ping', (_req, res) => res.send('pong'));
 
@@ -308,18 +249,30 @@ export default async function createApp(): Promise<express.Application> {
 	app.use('/extensions', extensionsRouter);
 	app.use('/fields', fieldsRouter);
 
-	if (env['TUS_ENABLED'] === true) {
-		app.use('/files/tus', tusRouter);
-	}
+	app.use('/files/tus', (req, resp, next) => {
+		const env = useEnv()
+
+		if (env['TUS_ENABLED'] === true) {
+			tusRouter(req, resp, next)
+		} else {
+			next()
+		}
+	});
 
 	app.use('/files', filesRouter);
 	app.use('/flows', flowsRouter);
 	app.use('/folders', foldersRouter);
 	app.use('/items', itemsRouter);
 
-	if (env['METRICS_ENABLED'] === true) {
-		app.use('/metrics', metricsRouter);
-	}
+	app.use('/metrics', (req, resp, next) => {
+		const env = useEnv()
+
+		if (env['METRICS_ENABLED'] === true) {
+			metricsRouter(req, resp, next)
+		} else {
+			next()
+		}
+	});
 
 	app.use('/notifications', notificationsRouter);
 	app.use('/operations', operationsRouter);
@@ -342,7 +295,7 @@ export default async function createApp(): Promise<express.Application> {
 
 	// Register custom endpoints
 	await emitter.emitInit('routes.custom.before', { app });
-	app.use(extensionManager.getEndpointRouter());
+	app.use((req, resp, next) => { getExtensionManager().getEndpointRouter()(req, resp, next) });
 	await emitter.emitInit('routes.custom.after', { app });
 
 	app.use(notFoundHandler);
@@ -355,4 +308,95 @@ export default async function createApp(): Promise<express.Application> {
 	await emitter.emitInit('app.after', { app });
 
 	return app;
+}
+
+function initializeAppSetting(app: Express) {
+	const env = useEnv()
+	app.disable('x-powered-by');
+	app.set('trust proxy', env['IP_TRUST_PROXY']);
+	app.set('query parser', (str: string) => qs.parse(str, { depth: Number(env['QUERYSTRING_MAX_PARSE_DEPTH']) }));
+}
+
+async function initializeAdminApp(app: Express) {
+	const env = useEnv()
+
+	if (env['SERVE_APP']) {
+		const adminPath = require.resolve('@directus/app');
+		const adminUrl = new Url(env['PUBLIC_URL'] as string).addPath('admin');
+
+		const extensionManager = getExtensionManager();
+		const embeds = extensionManager.getEmbeds();
+
+		// Set the App's base path according to the APIs public URL
+		const html = await readFile(adminPath, 'utf8');
+
+		const htmlWithVars = html
+			.replace(/<base \/>/, `<base href="${adminUrl.toString({ rootRelative: true })}/" />`)
+			.replace('<!-- directus-embed-head -->', embeds.head)
+			.replace('<!-- directus-embed-body -->', embeds.body);
+
+		const sendHtml = (_req: Request, res: Response) => {
+			res.setHeader('Cache-Control', 'no-cache');
+			res.setHeader('Vary', 'Origin, Cache-Control');
+			res.send(htmlWithVars);
+		};
+
+		const setStaticHeaders = (res: ServerResponse) => {
+			res.setHeader('Cache-Control', 'max-age=31536000, immutable');
+			res.setHeader('Vary', 'Origin, Cache-Control');
+		};
+
+		app.get('/admin', sendHtml);
+		app.use('/admin', express.static(path.join(adminPath, '..'), { setHeaders: setStaticHeaders }));
+		app.use('/admin/*', sendHtml);
+	}
+}
+
+async function validate() {
+	await useEnvTenant.runAll(async ({ env }) => {
+		const logger = useLogger();
+
+		await validateDatabaseConnection();
+
+		if ((await isInstalled()) === false) {
+			logger.error(`Database doesn't have Directus tables installed.`);
+			process.exit(1);
+		}
+
+		if ((await validateMigrations()) === false) {
+			logger.warn(`Database migrations have not all been run`);
+		}
+
+		if (!env['SECRET']) {
+			logger.warn(
+				`"SECRET" env variable is missing. Using a random value instead. Tokens will not persist between restarts. This is not appropriate for production usage.`
+			);
+		}
+
+		if (!new Url(env['PUBLIC_URL'] as string).isAbsolute()) {
+			logger.warn('"PUBLIC_URL" should be a full URL');
+		}
+
+		await validateDatabaseExtensions();
+		await validateStorage();
+	});
+}
+
+async function initializeSchedules() {
+	const logger = useLogger();
+
+	const scheduleInitializers = [
+		retentionSchedule,
+		telemetrySchedule,
+		tusSchedule,
+		metricsSchedule
+	];
+
+	await useEnvTenant.runAll(async ({ tenantID }) => {
+		logger.info(`Initializing schedules for tenant "${tenantID}"...`);
+
+		for (const schedule of scheduleInitializers) {
+			await schedule();
+		}
+	});
 }
