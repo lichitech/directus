@@ -3,7 +3,7 @@ import { ErrorCode, InvalidPayloadError, isDirectusError } from '@directus/error
 import type { PrimaryKey } from '@directus/types';
 import express from 'express';
 import Joi from 'joi';
-import { REFRESH_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS, UUID_REGEX } from '../constants.js';
+import { constants, UUID_REGEX } from '../constants.js';
 import { respond } from '../middleware/respond.js';
 import useCollection from '../middleware/use-collection.js';
 import { validateBatch } from '../middleware/validate-batch.js';
@@ -13,7 +13,6 @@ import asyncHandler from '../utils/async-handler.js';
 import { sanitizeQuery } from '../utils/sanitize-query.js';
 
 const router = express.Router();
-const env = useEnv();
 
 router.use(useCollection('directus_shares'));
 
@@ -50,13 +49,15 @@ router.post(
 			payload.access_token = accessToken;
 		}
 
+		const env = useEnv();
+
 		if (mode === 'cookie') {
-			res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, REFRESH_COOKIE_OPTIONS);
+			res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, constants.REFRESH_COOKIE_OPTIONS);
 			payload.access_token = accessToken;
 		}
 
 		if (mode === 'session') {
-			res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, SESSION_COOKIE_OPTIONS);
+			res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, constants.SESSION_COOKIE_OPTIONS);
 		}
 
 		res.locals['payload'] = { data: payload };

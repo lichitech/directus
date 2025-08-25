@@ -6,12 +6,12 @@ import emitter from '../emitter.js';
 import { getWebSocketController } from '../websocket/controllers/index.js';
 import type { WebSocketController } from '../websocket/controllers/rest.js';
 
-const env = useEnv();
-
 export class WebSocketService {
 	private controller: WebSocketController;
 
 	constructor() {
+		const env = useEnv();
+
 		if (!toBoolean(env['WEBSOCKETS_ENABLED']) || !toBoolean(env['WEBSOCKETS_REST_ENABLED'])) {
 			throw new ServiceUnavailableError({ service: 'ws', reason: 'WebSocket server is disabled' });
 		}

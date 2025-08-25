@@ -14,7 +14,7 @@ import { Router } from 'express';
 import Joi from 'joi';
 import type { Client, Error, LDAPResult, SearchCallbackResponse, SearchEntry } from 'ldapjs';
 import ldap from 'ldapjs';
-import { REFRESH_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS } from '../../constants.js';
+import { constants } from '../../constants.js';
 import getDatabase from '../../database/index.js';
 import emitter from '../../emitter.js';
 import { useLogger } from '../../logger/index.js';
@@ -471,11 +471,11 @@ export function createLDAPAuthRouter(provider: string): Router {
 			}
 
 			if (mode === 'cookie') {
-				res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, REFRESH_COOKIE_OPTIONS);
+				res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, constants.REFRESH_COOKIE_OPTIONS);
 			}
 
 			if (mode === 'session') {
-				res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, SESSION_COOKIE_OPTIONS);
+				res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, constants.SESSION_COOKIE_OPTIONS);
 			}
 
 			res.locals['payload'] = { data: payload };

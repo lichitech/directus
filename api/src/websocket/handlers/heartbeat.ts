@@ -9,7 +9,6 @@ import type { WebSocketClient } from '../types.js';
 import { fmtMessage, getMessageType } from '../utils/message.js';
 
 const env = useEnv();
-
 const HEARTBEAT_FREQUENCY = Number(env['WEBSOCKETS_HEARTBEAT_PERIOD']) * 1000;
 
 export class HeartbeatHandler {
@@ -33,7 +32,9 @@ export class HeartbeatHandler {
 			}
 		});
 
-		if (toBoolean(env['WEBSOCKETS_HEARTBEAT_ENABLED']) === true) {
+		const tenantEnv = useEnv();
+
+		if (toBoolean(tenantEnv['WEBSOCKETS_HEARTBEAT_ENABLED']) === true) {
 			emitter.onAction('websocket.connect', () => this.checkClients());
 			emitter.onAction('websocket.error', () => this.checkClients());
 			emitter.onAction('websocket.close', () => this.checkClients());

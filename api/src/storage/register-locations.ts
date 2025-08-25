@@ -1,7 +1,7 @@
 import { useEnv } from '@directus/env';
 import type { StorageManager } from '@directus/storage';
 import { toArray } from '@directus/utils';
-import { RESUMABLE_UPLOADS } from '../constants.js';
+import { constants } from '../constants.js';
 import { getConfigFromEnv } from '../utils/get-config-from-env.js';
 
 export const registerLocations = async (storage: StorageManager) => {
@@ -10,8 +10,8 @@ export const registerLocations = async (storage: StorageManager) => {
 	const locations = toArray(env['STORAGE_LOCATIONS'] as string);
 
 	const tus = {
-		enabled: RESUMABLE_UPLOADS.ENABLED,
-		chunkSize: RESUMABLE_UPLOADS.CHUNK_SIZE,
+		enabled: constants.RESUMABLE_UPLOADS.ENABLED,
+		chunkSize: constants.RESUMABLE_UPLOADS.CHUNK_SIZE,
 	};
 
 	locations.forEach((location: string) => {

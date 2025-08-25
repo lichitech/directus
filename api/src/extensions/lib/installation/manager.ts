@@ -14,13 +14,12 @@ import { useLogger } from '../../../logger/index.js';
 import { getStorage } from '../../../storage/index.js';
 import { getExtensionsPath } from '../get-extensions-path.js';
 
-const env = useEnv();
-
 export class InstallationManager {
 	extensionPath = getExtensionsPath();
 
 	async install(versionId: string) {
 		const logger = useLogger();
+		const env = useEnv();
 		const tempDir = join(env['TEMP_PATH'] as string, 'marketplace', versionId);
 		const tmpStorage = new DriverLocal({ root: tempDir });
 
@@ -102,6 +101,8 @@ export class InstallationManager {
 	}
 
 	async uninstall(folder: string) {
+		const env = useEnv()
+
 		if (env['EXTENSIONS_LOCATION']) {
 			const storage = await getStorage();
 			const remoteDisk = storage.location(env['EXTENSIONS_LOCATION'] as string);

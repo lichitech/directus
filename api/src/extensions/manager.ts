@@ -68,11 +68,9 @@ const nodeResolve = nodeResolveDefault as unknown as typeof nodeResolveDefault.d
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const env = useEnv();
-
 const defaultOptions: ExtensionManagerOptions = {
 	schedule: true,
-	watch: env['EXTENSIONS_AUTO_RELOAD'] as boolean,
+	watch: false,
 };
 
 export class ExtensionManager {
@@ -183,6 +181,8 @@ export class ExtensionManager {
 	 */
 	public async initialize(options: Partial<ExtensionManagerOptions> = {}): Promise<void> {
 		const logger = useLogger();
+		const env = useEnv();
+		defaultOptions.watch = env['EXTENSIONS_AUTO_RELOAD'] as boolean
 
 		this.options = {
 			...defaultOptions,
@@ -259,6 +259,8 @@ export class ExtensionManager {
 	 * Load all extensions from disk and register them in their respective places
 	 */
 	private async load(options?: { forceSync: boolean }): Promise<void> {
+		const env = useEnv();
+
 		const logger = useLogger();
 
 		if (env['EXTENSIONS_LOCATION']) {
@@ -397,6 +399,8 @@ export class ExtensionManager {
 
 		if (!file) return null;
 
+		const env = useEnv();
+
 		const tempDir = join(env['TEMP_PATH'] as string, 'app-extensions');
 		const tmpStorage = new DriverLocal({ root: tempDir });
 
@@ -485,9 +489,9 @@ export class ExtensionManager {
 				.flatMap((extension) =>
 					isTypeIn(extension, HYBRID_EXTENSION_TYPES) || extension.type === 'bundle'
 						? [
-								path.resolve(extension.path, extension.entrypoint.app),
-								path.resolve(extension.path, extension.entrypoint.api),
-							]
+							path.resolve(extension.path, extension.entrypoint.app),
+							path.resolve(extension.path, extension.entrypoint.api),
+						]
 						: path.resolve(extension.path, extension.entrypoint),
 				);
 
@@ -548,6 +552,7 @@ export class ExtensionManager {
 
 	private async registerSandboxedApiExtension(extension: ApiExtension | HybridExtension) {
 		const logger = useLogger();
+		const env = useEnv();
 
 		const sandboxMemory = Number(env['EXTENSIONS_SANDBOX_MEMORY']);
 		const sandboxTimeout = Number(env['EXTENSIONS_SANDBOX_TIMEOUT']);
@@ -892,6 +897,8 @@ export class ExtensionManager {
 			},
 		};
 
+		const env = useEnv();
+
 		hookRegistrationCallback(hookRegistrationContext, {
 			services,
 			env,
@@ -917,6 +924,8 @@ export class ExtensionManager {
 		const scopedRouter = express.Router();
 
 		this.endpointRouter.use(`/${routeName}`, scopedRouter);
+
+		const env = useEnv();
 
 		endpointRegistrationCallback(scopedRouter, {
 			services,
@@ -964,6 +973,7 @@ export class ExtensionManager {
 	 */
 	private handleExtensionError({ error, reason }: { error?: unknown; reason: string }): void {
 		const logger = useLogger();
+		const env = useEnv();
 
 		if (toBoolean(env['EXTENSIONS_MUST_LOAD'])) {
 			logger.error('EXTENSION_MUST_LOAD is enabled and an extension failed to load.');

@@ -7,12 +7,12 @@ import { merge } from 'lodash-es';
 import { Readable } from 'node:stream';
 import { performance } from 'perf_hooks';
 import { getCache } from '../cache.js';
-import { RESUMABLE_UPLOADS } from '../constants.js';
+import { constants } from '../constants.js';
 import getDatabase, { hasDatabaseConnection } from '../database/index.js';
 import { useLogger } from '../logger/index.js';
 import getMailer from '../mailer.js';
-import { rateLimiterGlobal } from '../middleware/rate-limiter-global.js';
-import { rateLimiter } from '../middleware/rate-limiter-ip.js';
+import { rateLimiterGlobalMap } from '../middleware/rate-limiter-global.js';
+import { rateLimiterMap } from '../middleware/rate-limiter-ip.js';
 import { SERVER_ONLINE } from '../server.js';
 import { getStorage } from '../storage/index.js';
 import { getAllowedLogLevels } from '../utils/get-allowed-log-levels.js';
@@ -121,9 +121,9 @@ export class ServerService {
 				info['websocket'] = false;
 			}
 
-			if (RESUMABLE_UPLOADS.ENABLED) {
+			if (constants.RESUMABLE_UPLOADS.ENABLED) {
 				info['uploads'] = {
-					chunkSize: RESUMABLE_UPLOADS.CHUNK_SIZE,
+					chunkSize: constants.RESUMABLE_UPLOADS.CHUNK_SIZE,
 				};
 			}
 
@@ -324,8 +324,8 @@ export class ServerService {
 			const startTime = performance.now();
 
 			try {
-				await rateLimiter.consume(`health-${checkID}`, 1);
-				await rateLimiter.delete(`health-${checkID}`);
+				await rateLimiterMap.get("")!.consume(`health-${checkID}`, 1);
+				await rateLimiterMap.get("")!.delete(`health-${checkID}`);
 			} catch (err: any) {
 				checks['rateLimiter:responseTime']![0]!.status = 'error';
 				checks['rateLimiter:responseTime']![0]!.output = err;
@@ -366,8 +366,8 @@ export class ServerService {
 			const startTime = performance.now();
 
 			try {
-				await rateLimiterGlobal.consume(`health-${checkID}`, 1);
-				await rateLimiterGlobal.delete(`health-${checkID}`);
+				await rateLimiterGlobalMap.get("")!.consume(`health-${checkID}`, 1);
+				await rateLimiterGlobalMap.get("")!.delete(`health-${checkID}`);
 			} catch (err: any) {
 				checks['rateLimiterGlobal:responseTime']![0]!.status = 'error';
 				checks['rateLimiterGlobal:responseTime']![0]!.output = err;

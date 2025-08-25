@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv, useEnvTenant } from '@directus/env';
 import { HitRateLimitError } from '@directus/errors';
 import type { RequestHandler } from 'express';
 import type { RateLimiterMemory, RateLimiterRedis } from 'rate-limiter-flexible';
@@ -9,39 +9,48 @@ import { validateEnv } from '../utils/validate-env.js';
 
 const RATE_LIMITER_GLOBAL_KEY = 'global-rate-limit';
 
-const env = useEnv();
-const logger = useLogger();
+export const rateLimiterGlobalMap: Map<string, RateLimiterRedis | RateLimiterMemory> = new Map();
 
-let checkRateLimit: RequestHandler = (_req, _res, next) => next();
+useEnvTenant.runAll(({ tenantID, env }) => {
+	if (env['RATE_LIMITER_GLOBAL_ENABLED'] === true) {
+		validateEnv(['RATE_LIMITER_GLOBAL_DURATION', 'RATE_LIMITER_GLOBAL_POINTS']);
+		validateConfiguration();
 
-export let rateLimiterGlobal: RateLimiterRedis | RateLimiterMemory;
+		rateLimiterGlobalMap.set(tenantID, createRateLimiter('RATE_LIMITER_GLOBAL'))
+	}
+})
 
-if (env['RATE_LIMITER_GLOBAL_ENABLED'] === true) {
-	validateEnv(['RATE_LIMITER_GLOBAL_DURATION', 'RATE_LIMITER_GLOBAL_POINTS']);
-	validateConfiguration();
+const checkRateLimit: RequestHandler = asyncHandler(
+	async (_req, res, next) => {
+		const env = useEnv();
 
-	rateLimiterGlobal = createRateLimiter('RATE_LIMITER_GLOBAL');
+		const tenantID = useEnvTenant.getTenantID()
+		const rateLimiterGlobal = rateLimiterGlobalMap.get(tenantID)
 
-	checkRateLimit = asyncHandler(async (_req, res, next) => {
-		try {
-			await rateLimiterGlobal.consume(RATE_LIMITER_GLOBAL_KEY, 1);
-		} catch (rateLimiterRes: any) {
-			if (rateLimiterRes instanceof Error) throw rateLimiterRes;
+		if (rateLimiterGlobal) {
+			try {
+				await rateLimiterGlobal.consume(RATE_LIMITER_GLOBAL_KEY, 1);
+			} catch (rateLimiterRes: any) {
+				if (rateLimiterRes instanceof Error) throw rateLimiterRes;
 
-			res.set('Retry-After', String(Math.round(rateLimiterRes.msBeforeNext / 1000)));
-			throw new HitRateLimitError({
-				limit: +(env['RATE_LIMITER_GLOBAL_POINTS'] as string),
-				reset: new Date(Date.now() + rateLimiterRes.msBeforeNext),
-			});
+				res.set('Retry-After', String(Math.round(rateLimiterRes.msBeforeNext / 1000)));
+				throw new HitRateLimitError({
+					limit: +(env['RATE_LIMITER_GLOBAL_POINTS'] as string),
+					reset: new Date(Date.now() + rateLimiterRes.msBeforeNext),
+				});
+			}
 		}
 
 		next();
-	});
-}
+	}
+)
 
 export default checkRateLimit;
 
 function validateConfiguration() {
+	const env = useEnv()
+	const logger = useLogger();
+
 	if (env['RATE_LIMITER_ENABLED'] !== true) {
 		logger.error(`The IP based rate limiter needs to be enabled when using the global rate limiter.`);
 		process.exit(1);

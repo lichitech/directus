@@ -19,7 +19,6 @@ import asyncHandler from '../utils/async-handler.js';
 import { sanitizeQuery } from '../utils/sanitize-query.js';
 
 const router = express.Router();
-const env = useEnv();
 
 router.use(useCollection('directus_files'));
 
@@ -36,6 +35,8 @@ export const multipartHandler: RequestHandler = (req, res, next) => {
 			'content-type': 'application/octet-stream',
 		};
 	}
+
+	const env = useEnv();
 
 	const busboy = Busboy({
 		headers,

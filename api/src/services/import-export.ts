@@ -44,7 +44,6 @@ import { UsersService } from './users.js';
 import { parseFields } from '../database/get-ast-from-query/lib/parse-fields.js';
 import { set } from 'lodash-es';
 
-const env = useEnv();
 const logger = useLogger();
 
 export class ImportService {
@@ -301,6 +300,7 @@ export class ExportService {
 			};
 
 			const database = getDatabase();
+			const env = useEnv();
 
 			await transaction(database, async (trx) => {
 				const service = getService(collection, {

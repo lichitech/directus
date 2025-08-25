@@ -58,7 +58,7 @@ describe('Casting of default configuration', () => {
 
 		const env = createEnv();
 
-		expect(env).toEqual({
+		expect(env.defaults).toEqual({
 			PROCESS: 'test-process',
 			FILE: 'test-file',
 			DEFAULT: 'test-default',
@@ -74,7 +74,7 @@ describe('Casting of default configuration', () => {
 
 		const env = createEnv();
 
-		expect(env).toEqual({
+		expect(env.defaults).toEqual({
 			PROCESS: 'test-process',
 			FILE: 'test-file',
 			DEFAULT: 'test-default',
@@ -89,7 +89,7 @@ describe('Casting of default configuration', () => {
 test('Combines process/file based config with defaults', () => {
 	const env = createEnv();
 
-	expect(env).toEqual({
+	expect(env.defaults).toEqual({
 		PROCESS: 'test-process',
 		FILE: 'test-file',
 		DEFAULT: 'test-default',
@@ -131,7 +131,7 @@ describe('File based configuration', () => {
 		expect(removeFileSuffix).toHaveBeenCalledWith('PROCESS_FILE');
 		expect(readFileSync).toHaveBeenCalledWith('./test/path', { encoding: 'utf8' });
 
-		expect(env).toEqual({
+		expect(env.defaults).toEqual({
 			PROCESS: 'file-content',
 			DEFAULT: 'test-default',
 			DEFAULT_ARRAY: 'one,two,three',
@@ -166,7 +166,7 @@ test('Passthrough file variables that are not Directus configuration flags', () 
 
 	expect(readFileSync).not.toHaveBeenCalled();
 
-	expect(env).toEqual({
+	expect(env.defaults).toEqual({
 		PROCESS: 'test-process',
 		DEFAULT: 'test-default',
 		DEFAULT_ARRAY: 'one,two,three',
@@ -203,7 +203,7 @@ test('Casts regular values', () => {
 
 	const env = createEnv();
 
-	expect(env).toEqual({
+	expect(env.defaults).toEqual({
 		PROCESS: 'cast-test-process',
 		FILE: 'cast-test-file',
 		DEFAULT: 'test-default',

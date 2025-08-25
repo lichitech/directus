@@ -3,8 +3,6 @@ import type { Knex } from 'knex';
 import { getDefaultIndexName } from '../../../../utils/get-default-index-name.js';
 import { SchemaHelper, type SortRecord } from '../types.js';
 
-const env = useEnv();
-
 export class SchemaHelperPostgres extends SchemaHelper {
 	override generateIndexName(
 		type: 'unique' | 'foreign' | 'index',
@@ -15,6 +13,8 @@ export class SchemaHelperPostgres extends SchemaHelper {
 	}
 
 	override async getDatabaseSize(): Promise<number | null> {
+		const env = useEnv();
+
 		try {
 			const result = await this.knex.select(this.knex.raw(`pg_database_size(?) as size;`, [env['DB_DATABASE']]));
 

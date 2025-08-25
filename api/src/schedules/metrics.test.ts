@@ -4,9 +4,13 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import * as schedule from '../utils/schedule.js';
 import { handleMetricsJob, default as metricsSchedule } from './metrics.js';
 
-vi.mock('@directus/env', () => ({
-	useEnv: vi.fn().mockReturnValue({}),
-}));
+vi.mock(import('@directus/env'), async (importOriginal) => {
+	const actual = await importOriginal()
+	return {
+		...actual,
+		useEnv: vi.fn().mockReturnValue({}),
+	}
+});
 
 vi.mock('node-schedule', () => ({
 	scheduleJob: vi.fn().mockReturnValue({}),
@@ -45,7 +49,7 @@ describe('metrics', () => {
 		await metricsSchedule();
 
 		expect(schedule.validateCron).toHaveBeenCalledWith('0 0 * * *');
-		expect(scheduleJob).toHaveBeenCalledWith('metrics', '0 0 * * *', handleMetricsJob);
+		expect(scheduleJob).toHaveBeenCalledWith('metrics:', '0 0 * * *', handleMetricsJob);
 	});
 
 	test('Returns true on successful init', async () => {

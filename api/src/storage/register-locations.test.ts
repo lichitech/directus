@@ -9,7 +9,7 @@ vi.mock('@directus/env');
 
 vi.mock('../utils/get-config-from-env.js');
 
-vi.mock('../constants.js', () => ({ RESUMABLE_UPLOADS: { CHUNK_SIZE: 9999 } }));
+vi.mock('../constants.js', () => ({ constants: { RESUMABLE_UPLOADS: { CHUNK_SIZE: 9999 } } }));
 
 let sample: {
 	options: {

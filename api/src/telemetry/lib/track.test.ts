@@ -17,11 +17,23 @@ vi.mock('@directus/utils/node');
 
 // This is required because logger uses global env which is imported before the tests run. Can be
 // reduce to just mock the file when logger is also using useLogger everywhere @TODO
-vi.mock('@directus/env', () => ({
-	useEnv: vi.fn().mockReturnValue({
+vi.mock(import('@directus/env'), async (importOriginal) => {
+	const { useEnvTenant, ...actual } = await importOriginal()
+
+	const mockEnv = {
 		EMAIL_TEMPLATES_PATH: './templates',
-	}),
-}));
+	}
+
+	useEnvTenant.runAll = vi.fn().mockImplementation((callback) => {
+		callback({ env: mockEnv, tenantID: "" })
+	})
+
+	return {
+		...actual,
+		useEnvTenant,
+		useEnv: vi.fn().mockReturnValue(mockEnv),
+	}
+});
 
 let mockLogger: any;
 

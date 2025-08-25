@@ -20,7 +20,7 @@ import { PassThrough as PassThroughStream, Transform as TransformStream } from '
 import zlib from 'node:zlib';
 import path from 'path';
 import url from 'url';
-import { RESUMABLE_UPLOADS } from '../constants.js';
+import { constants } from '../constants.js';
 import emitter from '../emitter.js';
 import { useLogger } from '../logger/index.js';
 import { validateAccess } from '../permissions/modules/validate-access/validate-access.js';
@@ -29,7 +29,6 @@ import { getStorage } from '../storage/index.js';
 import { extractMetadata, extractEmbedMetadata } from './files/lib/extract-metadata.js';
 import { ItemsService } from './items.js';
 
-const env = useEnv();
 const logger = useLogger();
 
 export class FilesService extends ItemsService<File> {
@@ -232,6 +231,7 @@ export class FilesService extends ItemsService<File> {
 		}
 
 		const encodedURL = encodeURL(importURL);
+		const env = useEnv();
 
 		if (isEmbed) {
 			let payload = {
@@ -334,7 +334,7 @@ export class FilesService extends ItemsService<File> {
 	override async readByQuery(query: Query, opts?: QueryOptions | undefined) {
 		const filteredQuery = cloneDeep(query);
 
-		if (RESUMABLE_UPLOADS.ENABLED === true) {
+		if (constants.RESUMABLE_UPLOADS.ENABLED === true) {
 			const filterPartialUploads = { tus_id: { _null: true } };
 
 			if (!filteredQuery.filter) {

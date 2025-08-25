@@ -1,13 +1,17 @@
+import { useEnvTenant } from '@directus/env';
 import { ExtensionManager } from './manager.js';
 
-let extensionManager: ExtensionManager | undefined;
+const extensionManagerMap: Map<string, ExtensionManager> = new Map();
 
 export function getExtensionManager(): ExtensionManager {
-	if (extensionManager) {
-		return extensionManager;
+	const tenantID = useEnvTenant.getTenantID()
+
+	if (extensionManagerMap.has(tenantID)) {
+		return extensionManagerMap.get(tenantID)!;
 	}
 
-	extensionManager = new ExtensionManager();
+	const manager = new ExtensionManager();
+	extensionManagerMap.set(tenantID, manager);
 
-	return extensionManager;
+	return manager;
 }

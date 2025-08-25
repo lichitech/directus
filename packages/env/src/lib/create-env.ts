@@ -10,20 +10,50 @@ import { removeFileSuffix } from '../utils/remove-file-suffix.js';
 import { cast } from './cast.js';
 import { readConfigurationFromFile } from './read-configuration-from-file.js';
 import { getCastFlag } from '../utils/has-cast-prefix.js';
+import { ENV_TENANT_REGEX } from '../constants/multi-tenant.js';
 
-export const createEnv = (): Env => {
+export const createEnv = (): { defaults: Env, tenants: Map<string, Env> } => {
 	const baseConfiguration = readConfigurationFromProcess();
 	const fileConfiguration = readConfigurationFromFile(getConfigPath());
-
 	const rawConfiguration = { ...baseConfiguration, ...fileConfiguration };
 
+	const tenantRawConfigurationMap = new Map<string, Env>()
+
+	for (const [key, value] of Object.entries(rawConfiguration)) {
+		const found = key.match(ENV_TENANT_REGEX)
+		if (!found || !found.groups) continue
+
+		delete rawConfiguration[key];
+
+		const tenantId = found.groups['id']?.toLowerCase()
+		const tenantKey = found.groups['key']
+		if (!tenantId || !tenantKey) continue
+
+		const configuration = tenantRawConfigurationMap.get(tenantId) ?? {}
+		configuration[tenantKey] = value
+		tenantRawConfigurationMap.set(tenantId, configuration)
+	}
+
+	const defaults = parseEnv(rawConfiguration);
+
+	const tenants = new Map<string, Env>()
+
+	tenantRawConfigurationMap.forEach((configuration, tenantId) => {
+		const tenantConfiguration = { ...rawConfiguration, ...configuration }
+		tenants.set(tenantId, parseEnv(tenantConfiguration));
+	})
+
+	return { defaults, tenants }
+};
+
+function parseEnv(configuration: Env) {
 	const output: Env = {};
 
 	for (const [key, value] of Object.entries(DEFAULTS)) {
 		output[key] = getDefaultType(key) ? cast(value, key) : value;
 	}
 
-	for (let [key, value] of Object.entries(rawConfiguration)) {
+	for (let [key, value] of Object.entries(configuration)) {
 		if (isFileKey(key) && isDirectusVariable(key) && typeof value === 'string') {
 			try {
 				// get the path to the file
@@ -45,5 +75,6 @@ export const createEnv = (): Env => {
 		output[key] = cast(value, key);
 	}
 
-	return output;
-};
+	return output
+}
+

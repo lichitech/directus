@@ -5,7 +5,7 @@ import argon2 from 'argon2';
 import { Router } from 'express';
 import Joi from 'joi';
 import { performance } from 'perf_hooks';
-import { REFRESH_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS } from '../../constants.js';
+import { constants } from '../../constants.js';
 import { respond } from '../../middleware/respond.js';
 import { createDefaultAccountability } from '../../permissions/utils/create-default-accountability.js';
 import { AuthenticationService } from '../../services/authentication.js';
@@ -100,12 +100,12 @@ export function createLocalAuthRouter(provider: string): Router {
 			}
 
 			if (mode === 'cookie') {
-				res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, REFRESH_COOKIE_OPTIONS);
+				res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, constants.REFRESH_COOKIE_OPTIONS);
 				payload.access_token = accessToken;
 			}
 
 			if (mode === 'session') {
-				res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, SESSION_COOKIE_OPTIONS);
+				res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, constants.SESSION_COOKIE_OPTIONS);
 			}
 
 			res.locals['payload'] = { data: payload };

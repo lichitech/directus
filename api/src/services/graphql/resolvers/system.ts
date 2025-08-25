@@ -32,14 +32,14 @@ import { getRelationType } from './get-relation-type.js';
 import { resolveSystemAdmin } from './system-admin.js';
 import { globalResolvers } from './system-global.js';
 
-const env = useEnv();
-
 export function injectSystemResolvers(
 	gql: GraphQLService,
 	schemaComposer: SchemaComposer<GraphQLParams['contextValue']>,
 	{ CreateCollectionTypes, ReadCollectionTypes, UpdateCollectionTypes }: CollectionTypes,
 	schema: Schema,
 ): SchemaComposer<any> {
+	const env = useEnv();
+
 	globalResolvers(gql, schemaComposer);
 
 	const ServerInfo = schemaComposer.createObjectTC({

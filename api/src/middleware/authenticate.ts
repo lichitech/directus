@@ -9,7 +9,7 @@ import { getAccountabilityForToken } from '../utils/get-accountability-for-token
 import { getIPFromReq } from '../utils/get-ip-from-req.js';
 import { ErrorCode, isDirectusError } from '@directus/errors';
 import { useEnv } from '@directus/env';
-import { SESSION_COOKIE_OPTIONS } from '../constants.js';
+import { constants } from '../constants.js';
 
 /**
  * Verify the passed JWT and assign the user ID and role to `req`
@@ -51,7 +51,7 @@ export const handler = async (req: Request, res: Response, next: NextFunction) =
 		if (isDirectusError(err, ErrorCode.InvalidCredentials) || isDirectusError(err, ErrorCode.InvalidToken)) {
 			if (req.cookies[env['SESSION_COOKIE_NAME'] as string] === req.token) {
 				// clear the session token if ended up in an invalid state
-				res.clearCookie(env['SESSION_COOKIE_NAME'] as string, SESSION_COOKIE_OPTIONS);
+				res.clearCookie(env['SESSION_COOKIE_NAME'] as string, constants.SESSION_COOKIE_OPTIONS);
 			}
 		}
 

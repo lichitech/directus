@@ -30,8 +30,6 @@ import { getSchema } from '../utils/get-schema.js';
 import { transaction } from '../utils/transaction.js';
 import { ItemsService } from './items.js';
 
-const env = useEnv();
-
 export class RelationsService {
 	knex: Knex;
 	schemaInspector: SchemaInspector;
@@ -63,6 +61,7 @@ export class RelationsService {
 	}
 
 	async foreignKeys(collection?: string) {
+		const env = useEnv();
 		const schemaCacheIsEnabled = Boolean(env['CACHE_SCHEMA']);
 
 		let foreignKeys: ForeignKey[] | null = null;

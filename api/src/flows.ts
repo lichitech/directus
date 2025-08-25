@@ -1,5 +1,5 @@
 import { Action } from '@directus/constants';
-import { useEnv } from '@directus/env';
+import { useEnv, useEnvTenant } from '@directus/env';
 import { ForbiddenError } from '@directus/errors';
 import { isSystemCollection } from '@directus/system-data';
 import type {
@@ -34,16 +34,18 @@ import { JobQueue } from './utils/job-queue.js';
 import { redactObject } from './utils/redact-object.js';
 import { scheduleSynchronizedJob, validateCron } from './utils/schedule.js';
 
-let flowManager: FlowManager | undefined;
+const flowManagerMap: Map<string, FlowManager> = new Map();
 
 export function getFlowManager(): FlowManager {
-	if (flowManager) {
-		return flowManager;
+	const tenantID = useEnvTenant.getTenantID();
+
+	if (flowManagerMap.has(tenantID)) {
+		return flowManagerMap.get(tenantID)!;
 	}
 
-	flowManager = new FlowManager();
-
-	return flowManager;
+	const manager = new FlowManager();
+	flowManagerMap.set(tenantID, manager);
+	return manager;
 }
 
 type TriggerHandler = {

@@ -30,7 +30,6 @@ import { ItemsService } from './items.js';
 import { MailService } from './mail/index.js';
 import { SettingsService } from './settings.js';
 
-const env = useEnv();
 const logger = useLogger();
 
 export class UsersService extends ItemsService {
@@ -148,6 +147,7 @@ export class UsersService extends ItemsService {
 	 * Create URL for inviting users
 	 */
 	private inviteUrl(email: string, url: string | null): string {
+		const env = useEnv();
 		const payload = { email, scope: 'invite' };
 
 		const token = jwt.sign(payload, getSecret(), {
@@ -358,6 +358,7 @@ export class UsersService extends ItemsService {
 	}
 
 	async inviteUser(email: string | string[], role: string, url: string | null, subject?: string | null): Promise<void> {
+		const env = useEnv();
 		const opts: MutationOptions = {};
 
 		try {
@@ -435,6 +436,8 @@ export class UsersService extends ItemsService {
 	}
 
 	async registerUser(input: RegisterUserInput) {
+		const env = useEnv();
+
 		if (
 			input.verification_url &&
 			isUrlAllowed(input.verification_url, env['USER_REGISTER_URL_ALLOW_LIST'] as string) === false
@@ -536,6 +539,8 @@ export class UsersService extends ItemsService {
 	}
 
 	async verifyRegistration(token: string): Promise<string> {
+		const env = useEnv();
+
 		const { email, scope } = verifyJWT(token, env['SECRET'] as string) as {
 			email: string;
 			scope: string;
@@ -555,6 +560,7 @@ export class UsersService extends ItemsService {
 	}
 
 	async requestPasswordReset(email: string, url: string | null, subject?: string | null): Promise<void> {
+		const env = useEnv();
 		const STALL_TIME = 500;
 		const timeStart = performance.now();
 

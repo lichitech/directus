@@ -5,8 +5,6 @@ import { useEnv } from '@directus/env';
 import { toBoolean } from '@directus/utils';
 import bytes from 'bytes';
 
-const env = useEnv();
-
 export const SYSTEM_ASSET_ALLOW_LIST: TransformationParams[] = [
 	{
 		key: 'system-small-cover',
@@ -65,22 +63,6 @@ export const GENERATE_SPECIAL = ['uuid', 'date-created', 'role-created', 'user-c
 
 export const UUID_REGEX = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 
-export const REFRESH_COOKIE_OPTIONS: CookieOptions = {
-	httpOnly: true,
-	domain: env['REFRESH_TOKEN_COOKIE_DOMAIN'] as string,
-	maxAge: getMilliseconds(env['REFRESH_TOKEN_TTL'] as string),
-	secure: Boolean(env['REFRESH_TOKEN_COOKIE_SECURE']),
-	sameSite: (env['REFRESH_TOKEN_COOKIE_SAME_SITE'] || 'strict') as 'lax' | 'strict' | 'none',
-};
-
-export const SESSION_COOKIE_OPTIONS: CookieOptions = {
-	httpOnly: true,
-	domain: env['SESSION_COOKIE_DOMAIN'] as string,
-	maxAge: getMilliseconds(env['SESSION_COOKIE_TTL'] as string),
-	secure: Boolean(env['SESSION_COOKIE_SECURE']),
-	sameSite: (env['SESSION_COOKIE_SAME_SITE'] || 'strict') as 'lax' | 'strict' | 'none',
-};
-
 export const OAS_REQUIRED_SCHEMAS = ['Query', 'x-metadata'];
 
 /** Formats from which transformation is supported */
@@ -96,13 +78,38 @@ export const SUPPORTED_IMAGE_METADATA_FORMATS = [
 	'image/avif',
 ];
 
-/** Resumable uploads */
-export const RESUMABLE_UPLOADS = {
-	ENABLED: toBoolean(env['TUS_ENABLED']),
-	CHUNK_SIZE: bytes.parse(env['TUS_CHUNK_SIZE'] as string),
-	MAX_SIZE: bytes.parse(env['FILES_MAX_UPLOAD_SIZE'] as string),
-	EXPIRATION_TIME: getMilliseconds(env['TUS_UPLOAD_EXPIRATION'], 600_000 /* 10min */),
-	SCHEDULE: String(env['TUS_CLEANUP_SCHEDULE'] as string),
-};
-
 export const ALLOWED_DB_DEFAULT_FUNCTIONS = ['gen_random_uuid()'];
+
+export const constants = {
+	get REFRESH_COOKIE_OPTIONS(): CookieOptions {
+		const env = useEnv()
+		return {
+			httpOnly: true,
+			domain: env['REFRESH_TOKEN_COOKIE_DOMAIN'] as string,
+			maxAge: getMilliseconds(env['REFRESH_TOKEN_TTL'] as string),
+			secure: Boolean(env['REFRESH_TOKEN_COOKIE_SECURE']),
+			sameSite: (env['REFRESH_TOKEN_COOKIE_SAME_SITE'] || 'strict') as 'lax' | 'strict' | 'none',
+		};
+	},
+	get SESSION_COOKIE_OPTIONS(): CookieOptions {
+		const env = useEnv()
+		return {
+			httpOnly: true,
+			domain: env['SESSION_COOKIE_DOMAIN'] as string,
+			maxAge: getMilliseconds(env['SESSION_COOKIE_TTL'] as string),
+			secure: Boolean(env['SESSION_COOKIE_SECURE']),
+			sameSite: (env['SESSION_COOKIE_SAME_SITE'] || 'strict') as 'lax' | 'strict' | 'none',
+		};
+	},
+	/** Resumable uploads */
+	get RESUMABLE_UPLOADS() {
+		const env = useEnv()
+		return {
+			ENABLED: toBoolean(env['TUS_ENABLED']),
+			CHUNK_SIZE: bytes.parse(env['TUS_CHUNK_SIZE'] as string),
+			MAX_SIZE: bytes.parse(env['FILES_MAX_UPLOAD_SIZE'] as string),
+			EXPIRATION_TIME: getMilliseconds(env['TUS_UPLOAD_EXPIRATION'], 600_000 /* 10min */),
+			SCHEDULE: String(env['TUS_CLEANUP_SCHEDULE'] as string),
+		}
+	},
+}

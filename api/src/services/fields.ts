@@ -48,7 +48,6 @@ import { PayloadService } from './payload.js';
 import { RelationsService } from './relations.js';
 
 const systemFieldRows = getSystemFieldRowsWithAuthProviders();
-const env = useEnv();
 
 export class FieldsService {
 	knex: Knex;
@@ -81,6 +80,7 @@ export class FieldsService {
 	async columnInfo(collection?: string): Promise<Column[]>;
 	async columnInfo(collection: string, field: string): Promise<Column>;
 	async columnInfo(collection?: string, field?: string): Promise<Column | Column[]> {
+		const env = useEnv();
 		const schemaCacheIsEnabled = Boolean(env['CACHE_SCHEMA']);
 
 		let columnInfo: Column[] | null = null;
@@ -219,16 +219,16 @@ export class FieldsService {
 			const permissions = await fetchPermissions(
 				collection
 					? {
-							action: 'read',
-							policies,
-							collections: [collection],
-							accountability: this.accountability,
-						}
+						action: 'read',
+						policies,
+						collections: [collection],
+						accountability: this.accountability,
+					}
 					: {
-							action: 'read',
-							policies,
-							accountability: this.accountability,
-						},
+						action: 'read',
+						policies,
+						accountability: this.accountability,
+					},
 				{ knex: this.knex, schema: this.schema },
 			);
 
@@ -324,9 +324,9 @@ export class FieldsService {
 
 		const columnWithCastDefaultValue = column
 			? {
-					...column,
-					default_value: getDefaultValue(column, fieldInfo),
-				}
+				...column,
+				default_value: getDefaultValue(column, fieldInfo),
+			}
 			: null;
 
 		const data = {
@@ -384,17 +384,17 @@ export class FieldsService {
 				const hookAdjustedField =
 					opts?.emitEvents !== false
 						? await emitter.emitFilter(
-								`fields.create`,
-								field,
-								{
-									collection: collection,
-								},
-								{
-									database: trx,
-									schema: this.schema,
-									accountability: this.accountability,
-								},
-							)
+							`fields.create`,
+							field,
+							{
+								collection: collection,
+							},
+							{
+								database: trx,
+								schema: this.schema,
+								accountability: this.accountability,
+							},
+						)
 						: field;
 
 				if (hookAdjustedField.type && ALIAS_TYPES.includes(hookAdjustedField.type) === false) {
@@ -488,18 +488,18 @@ export class FieldsService {
 			const hookAdjustedField =
 				opts?.emitEvents !== false
 					? await emitter.emitFilter(
-							`fields.update`,
-							field,
-							{
-								keys: [field.field],
-								collection: collection,
-							},
-							{
-								database: this.knex,
-								schema: this.schema,
-								accountability: this.accountability,
-							},
-						)
+						`fields.update`,
+						field,
+						{
+							keys: [field.field],
+							collection: collection,
+						},
+						{
+							database: this.knex,
+							schema: this.schema,
+							accountability: this.accountability,
+						},
+					)
 					: field;
 
 			const record = field.meta

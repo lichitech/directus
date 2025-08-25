@@ -1,5 +1,5 @@
 import { Action } from '@directus/constants';
-import { useEnv } from '@directus/env';
+import { useEnvTenant, useEnv } from '@directus/env';
 import { toBoolean } from '@directus/utils';
 import type { Knex } from 'knex';
 import { getHelpers } from '../database/helpers/index.js';
@@ -16,29 +16,47 @@ export interface RetentionTask {
 	timeframe: number | undefined;
 }
 
-const env = useEnv();
-
 const retentionLockKey = 'schedule--data-retention';
 const retentionLockTimeout = 10 * 60 * 1000; // 10 mins
 
-const ACTIVITY_RETENTION_TIMEFRAME = getMilliseconds(env['ACTIVITY_RETENTION']);
-const FLOW_LOGS_RETENTION_TIMEFRAME = getMilliseconds(env['FLOW_LOGS_RETENTION']);
-const REVISIONS_RETENTION_TIMEFRAME = getMilliseconds(env['REVISIONS_RETENTION']);
+function getRetentionTasks(): RetentionTask[] {
+	const env = useEnv();
 
-const retentionTasks: RetentionTask[] = [
-	{
-		collection: 'directus_activity',
-		where: ['action', '!=', Action.RUN],
-		timeframe: ACTIVITY_RETENTION_TIMEFRAME,
-	},
-	{
-		collection: 'directus_activity',
-		where: ['action', '=', Action.RUN],
-		timeframe: FLOW_LOGS_RETENTION_TIMEFRAME,
-	},
-];
+	const ACTIVITY_RETENTION_TIMEFRAME = getMilliseconds(env['ACTIVITY_RETENTION']);
+	const FLOW_LOGS_RETENTION_TIMEFRAME = getMilliseconds(env['FLOW_LOGS_RETENTION']);
+	const REVISIONS_RETENTION_TIMEFRAME = getMilliseconds(env['REVISIONS_RETENTION']);
+
+	const tasks: RetentionTask[] = [
+		{
+			collection: 'directus_activity',
+			where: ['action', '!=', Action.RUN],
+			timeframe: ACTIVITY_RETENTION_TIMEFRAME,
+		},
+		{
+			collection: 'directus_activity',
+			where: ['action', '=', Action.RUN],
+			timeframe: FLOW_LOGS_RETENTION_TIMEFRAME,
+		},
+	];
+
+	if (
+		!ACTIVITY_RETENTION_TIMEFRAME ||
+		(ACTIVITY_RETENTION_TIMEFRAME &&
+			REVISIONS_RETENTION_TIMEFRAME &&
+			ACTIVITY_RETENTION_TIMEFRAME > REVISIONS_RETENTION_TIMEFRAME)
+	) {
+		tasks.push({
+			collection: 'directus_revisions',
+			join: ['directus_activity', 'directus_revisions.activity', 'directus_activity.id'],
+			timeframe: REVISIONS_RETENTION_TIMEFRAME,
+		});
+	}
+
+	return tasks;
+}
 
 export async function handleRetentionJob() {
+	const env = useEnv();
 	const database = getDatabase();
 	const logger = useLogger();
 	const lock = useLock();
@@ -53,6 +71,8 @@ export async function handleRetentionJob() {
 	}
 
 	await lock.set(retentionLockKey, Date.now());
+
+	const retentionTasks = getRetentionTasks();
 
 	for (const task of retentionTasks) {
 		let count = 0;
@@ -116,6 +136,7 @@ export async function handleRetentionJob() {
  */
 export default async function schedule(): Promise<boolean> {
 	const env = useEnv();
+	const tenantId = useEnvTenant.getTenantID();
 
 	if (!toBoolean(env['RETENTION_ENABLED'])) {
 		return false;
@@ -125,20 +146,7 @@ export default async function schedule(): Promise<boolean> {
 		return false;
 	}
 
-	if (
-		!ACTIVITY_RETENTION_TIMEFRAME ||
-		(ACTIVITY_RETENTION_TIMEFRAME &&
-			REVISIONS_RETENTION_TIMEFRAME &&
-			ACTIVITY_RETENTION_TIMEFRAME > REVISIONS_RETENTION_TIMEFRAME)
-	) {
-		retentionTasks.push({
-			collection: 'directus_revisions',
-			join: ['directus_activity', 'directus_revisions.activity', 'directus_activity.id'],
-			timeframe: REVISIONS_RETENTION_TIMEFRAME,
-		});
-	}
-
-	scheduleSynchronizedJob('retention', String(env['RETENTION_SCHEDULE']), handleRetentionJob);
+	scheduleSynchronizedJob(`retention:${tenantId}`, String(env['RETENTION_SCHEDULE']), handleRetentionJob);
 
 	return true;
 }

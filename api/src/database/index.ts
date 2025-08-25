@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnv, useEnvTenant } from '@directus/env';
 import type { SchemaInspector } from '@directus/schema';
 import { createInspector } from '@directus/schema';
 import { isObject } from '@directus/utils';
@@ -25,18 +25,12 @@ type QueryInfo = Partial<Knex.Sql> & {
 	[key: string | number | symbol]: any;
 };
 
-let database: Knex | null = null;
-let inspector: SchemaInspector | null = null;
+const tenantDatabases = new Map<string, Knex>();
+const tenantInspectors = new Map<string, SchemaInspector>();
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export default getDatabase;
-
-export function getDatabase(): Knex {
-	if (database) {
-		return database;
-	}
-
+function createDatabase(): Knex {
 	const env = useEnv();
 	const logger = useLogger();
 	const metrics = useMetrics();
@@ -169,12 +163,12 @@ export function getDatabase(): Knex {
 		merge(knexConfig, { connection: { options: { useUTC: false } } });
 	}
 
-	database = knex.default(knexConfig);
-	validateDatabaseCharset(database);
+	const newDatabase = knex.default(knexConfig);
+	validateDatabaseCharset(newDatabase);
 
 	const times = new Map<string, number>();
 
-	database
+	newDatabase
 		.on('query', ({ __knexUid }: QueryInfo) => {
 			times.set(__knexUid, performance.now());
 		})
@@ -202,19 +196,44 @@ export function getDatabase(): Knex {
 			times.delete(queryInfo.__knexUid);
 		});
 
-	return database;
+	return newDatabase;
 }
 
-export function getSchemaInspector(database?: Knex): SchemaInspector {
-	if (inspector) {
-		return inspector;
+export default getDatabase;
+
+export function getDatabase(): Knex {
+	const tenantId = useEnvTenant.getTenantID();
+
+	if (tenantDatabases.has(tenantId)) {
+		return tenantDatabases.get(tenantId)!;
 	}
 
-	database ??= getDatabase();
+	const tenantDatabase = createDatabase();
+	tenantDatabases.set(tenantId, tenantDatabase);
+	return tenantDatabase;
+}
 
-	inspector = createInspector(database);
+export async function shutdownTenantDBs(): Promise<void> {
+	for (const [_tenantId, db] of tenantDatabases) {
+		await db.destroy();
+	}
+}
 
-	return inspector;
+export function getSchemaInspector(db?: Knex): SchemaInspector {
+	if (db) {
+		return createInspector(db);
+	}
+
+	const tenantId = useEnvTenant.getTenantID();
+	const currentDb = getDatabase();
+
+	if (tenantInspectors.has(tenantId)) {
+		return tenantInspectors.get(tenantId)!;
+	}
+
+	const newInspector = createInspector(currentDb);
+	tenantInspectors.set(tenantId, newInspector);
+	return newInspector;
 }
 
 export async function hasDatabaseConnection(database?: Knex): Promise<boolean> {
@@ -236,6 +255,7 @@ export async function hasDatabaseConnection(database?: Knex): Promise<boolean> {
 export async function validateDatabaseConnection(database?: Knex): Promise<void> {
 	database = database ?? getDatabase();
 	const logger = useLogger();
+	const tenantID = useEnvTenant.getTenantID()
 
 	try {
 		if (getDatabaseClient(database) === 'oracle') {
@@ -244,7 +264,7 @@ export async function validateDatabaseConnection(database?: Knex): Promise<void>
 			await database.raw('SELECT 1');
 		}
 	} catch (error: any) {
-		logger.error(`Can't connect to the database.`);
+		logger.error(`[${tenantID}] Can't connect to the database.`);
 		logger.error(error);
 		process.exit(1);
 	}

@@ -4,8 +4,6 @@ import type { Options, SortRecord } from '../types.js';
 import { SchemaHelper } from '../types.js';
 import { useEnv } from '@directus/env';
 
-const env = useEnv();
-
 export class SchemaHelperCockroachDb extends SchemaHelper {
 	override async changeToType(
 		table: string,
@@ -29,6 +27,8 @@ export class SchemaHelperCockroachDb extends SchemaHelper {
 	}
 
 	override async getDatabaseSize(): Promise<number | null> {
+		const env = useEnv();
+
 		try {
 			const result = await this.knex
 				.select(this.knex.raw('round(SUM(range_size_mb) * 1024 * 1024, 0) AS size'))

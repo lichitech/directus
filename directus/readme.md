@@ -2,6 +2,16 @@
 
 ---
 
+## 🍴 Fork Modifications
+
+This fork includes several enhancements to improve multi-tenancy support and re-introduces a popular content embedding feature.
+
+- **Enhanced Multi-Tenancy:** The Command-Line Interface (CLI) now fully supports multi-tenant operations. Use the global `--tenant <id>` flag for targeted commands or run `bootstrap` without it to initialize all tenants at once. See the [Multi-Tenancy Guide](../docs/configuration/multi-tenancy.md) for details.
+
+- **Content Embedding:** Re-introduces the ability to "embed" external URLs (like YouTube or Vimeo) as file items. Directus fetches oEmbed/OpenGraph metadata for rich previews without storing the file locally. Learn more in the [Embedding Content Guide](../docs/guides/files/embedding-content.md).
+
+---
+
 ## 🐰 Introduction
 
 Directus is a real-time API and App dashboard for managing SQL database content.

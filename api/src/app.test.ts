@@ -18,13 +18,18 @@ vi.mock('./telemetry/index.js');
 
 // This is required because logger uses global env which is imported before the tests run. Can be
 // reduce to just mock the file when logger is also using useLogger everywhere @TODO
-vi.mock('@directus/env', () => ({
-	useEnv: vi.fn().mockReturnValue({
-		EXTENSIONS_PATH: './extensions',
-		STORAGE_LOCATIONS: ['local'],
-		EMAIL_TEMPLATES_PATH: './templates',
-	}),
-}));
+vi.mock(import("@directus/env"), async (importOriginal) => {
+	const actual = await importOriginal()
+	return {
+		...actual,
+		useEnv: vi.fn().mockReturnValue({
+			EXTENSIONS_PATH: './extensions',
+			STORAGE_LOCATIONS: ['local'],
+			EMAIL_TEMPLATES_PATH: './templates',
+		}),
+	}
+});
+
 
 const mockGetEndpointRouter = vi.fn().mockReturnValue(Router());
 const mockGetEmbeds = vi.fn().mockReturnValue({ head: '', body: '' });

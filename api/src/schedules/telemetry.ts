@@ -1,4 +1,4 @@
-import { useEnv } from '@directus/env';
+import { useEnvTenant, useEnv } from '@directus/env';
 import { toBoolean } from '@directus/utils';
 import { getCache } from '../cache.js';
 import { scheduleSynchronizedJob } from '../utils/schedule.js';
@@ -19,15 +19,18 @@ export const jobCallback = () => {
  */
 export default async function schedule(): Promise<boolean> {
 	const env = useEnv();
+	const tenantId = useEnvTenant.getTenantID();
 
 	if (toBoolean(env['TELEMETRY']) === false) return false;
 
-	scheduleSynchronizedJob('telemetry', '0 */6 * * *', jobCallback);
+	scheduleSynchronizedJob(`telemetry:${tenantId}`, '0 */6 * * *', jobCallback);
 
 	const { lockCache } = getCache();
 
-	if (!(await lockCache.get('telemetry-lock'))) {
-		await lockCache.set('telemetry-lock', true, 30000);
+	const lockKey = `telemetry-lock:${tenantId}`;
+
+	if (!(await lockCache.get(lockKey))) {
+		await lockCache.set(lockKey, true, 30000);
 
 		track({ wait: false });
 

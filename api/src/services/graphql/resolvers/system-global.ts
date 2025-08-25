@@ -13,8 +13,8 @@ import {
 } from 'graphql';
 import { SchemaComposer } from 'graphql-compose';
 import { clearSystemCache, getCache } from '../../../cache.js';
-import { DEFAULT_AUTH_PROVIDER, REFRESH_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS } from '../../../constants.js';
-import { rateLimiter } from '../../../middleware/rate-limiter-registration.js';
+import { DEFAULT_AUTH_PROVIDER, constants } from '../../../constants.js';
+import { getRateLimiter } from '../../../middleware/rate-limiter-registration.js';
 import { createDefaultAccountability } from '../../../permissions/utils/create-default-accountability.js';
 import type { AuthenticationMode } from '../../../types/index.js';
 import { generateHash } from '../../../utils/generate-hash.js';
@@ -30,8 +30,6 @@ import { UtilsService } from '../../utils.js';
 import { GraphQLService } from '../index.js';
 import { GraphQLBigInt } from '../types/bigint.js';
 import { GraphQLVoid } from '../types/void.js';
-
-const env = useEnv();
 
 /**
  * Globally available mutations
@@ -65,6 +63,7 @@ export function globalResolvers(gql: GraphQLService, schemaComposer: SchemaCompo
 				otp: GraphQLString,
 			},
 			resolve: async (_, args, { req, res }) => {
+				const env = useEnv();
 				const accountability: Accountability = createDefaultAccountability();
 
 				if (req?.ip) accountability.ip = req.ip;
@@ -95,12 +94,12 @@ export function globalResolvers(gql: GraphQLService, schemaComposer: SchemaCompo
 				}
 
 				if (mode === 'cookie') {
-					res?.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, REFRESH_COOKIE_OPTIONS);
+					res?.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, constants.REFRESH_COOKIE_OPTIONS);
 					payload.access_token = accessToken;
 				}
 
 				if (mode === 'session') {
-					res?.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, SESSION_COOKIE_OPTIONS);
+					res?.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, constants.SESSION_COOKIE_OPTIONS);
 				}
 
 				return payload;
@@ -113,6 +112,7 @@ export function globalResolvers(gql: GraphQLService, schemaComposer: SchemaCompo
 				mode: AuthMode,
 			},
 			resolve: async (_, args, { req, res }) => {
+				const env = useEnv();
 				const accountability: Accountability = createDefaultAccountability();
 
 				if (req?.ip) accountability.ip = req.ip;
@@ -162,12 +162,12 @@ export function globalResolvers(gql: GraphQLService, schemaComposer: SchemaCompo
 				}
 
 				if (mode === 'cookie') {
-					res?.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, REFRESH_COOKIE_OPTIONS);
+					res?.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, constants.REFRESH_COOKIE_OPTIONS);
 					payload.access_token = accessToken;
 				}
 
 				if (mode === 'session') {
-					res?.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, SESSION_COOKIE_OPTIONS);
+					res?.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, constants.SESSION_COOKIE_OPTIONS);
 				}
 
 				return payload;
@@ -180,6 +180,7 @@ export function globalResolvers(gql: GraphQLService, schemaComposer: SchemaCompo
 				mode: AuthMode,
 			},
 			resolve: async (_, args, { req, res }) => {
+				const env = useEnv();
 				const accountability: Accountability = createDefaultAccountability();
 
 				if (req?.ip) accountability.ip = req.ip;
@@ -220,11 +221,11 @@ export function globalResolvers(gql: GraphQLService, schemaComposer: SchemaCompo
 				await authenticationService.logout(currentRefreshToken);
 
 				if (req?.cookies[env['REFRESH_TOKEN_COOKIE_NAME'] as string]) {
-					res?.clearCookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, REFRESH_COOKIE_OPTIONS);
+					res?.clearCookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, constants.REFRESH_COOKIE_OPTIONS);
 				}
 
 				if (req?.cookies[env['SESSION_COOKIE_NAME'] as string]) {
-					res?.clearCookie(env['SESSION_COOKIE_NAME'] as string, SESSION_COOKIE_OPTIONS);
+					res?.clearCookie(env['SESSION_COOKIE_NAME'] as string, constants.SESSION_COOKIE_OPTIONS);
 				}
 
 				return true;
@@ -464,7 +465,7 @@ export function globalResolvers(gql: GraphQLService, schemaComposer: SchemaCompo
 				const ip = req ? getIPFromReq(req) : null;
 
 				if (ip) {
-					await rateLimiter.consume(ip);
+					await getRateLimiter()?.consume(ip);
 				}
 
 				await service.registerUser({

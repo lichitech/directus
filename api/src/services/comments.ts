@@ -13,7 +13,6 @@ import { ItemsService } from './items.js';
 import { NotificationsService } from './notifications.js';
 import { UsersService } from './users.js';
 
-const env = useEnv();
 const logger = useLogger();
 
 export class CommentsService extends ItemsService {
@@ -130,6 +129,7 @@ export class CommentsService extends ItemsService {
 				}
 
 				comment = `> ${comment.replace(/\n+/gm, '\n> ')}`;
+				const env = useEnv();
 
 				const href = new Url(env['PUBLIC_URL'] as string)
 					.addPath('admin', 'content', data['collection'], data['item'])

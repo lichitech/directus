@@ -1,5 +1,5 @@
 import { useEnv } from '@directus/env';
-import { ErrorCode, InvalidPayloadError, isDirectusError } from '@directus/errors';
+import { ErrorCode, InvalidPayloadError, isDirectusError, RouteNotFoundError } from '@directus/errors';
 import type { Accountability } from '@directus/types';
 import type { Request } from 'express';
 import { Router } from 'express';
@@ -10,7 +10,7 @@ import {
 	createOpenIDAuthRouter,
 	createSAMLAuthRouter,
 } from '../auth/drivers/index.js';
-import { DEFAULT_AUTH_PROVIDER, REFRESH_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS } from '../constants.js';
+import { DEFAULT_AUTH_PROVIDER, constants } from '../constants.js';
 import { useLogger } from '../logger/index.js';
 import { respond } from '../middleware/respond.js';
 import { createDefaultAccountability } from '../permissions/utils/create-default-accountability.js';
@@ -25,7 +25,6 @@ import isDirectusJWT from '../utils/is-directus-jwt.js';
 import { verifyAccessJWT } from '../utils/jwt.js';
 
 const router = Router();
-const env = useEnv();
 const logger = useLogger();
 
 const authProviders = getAuthProviders();
@@ -63,9 +62,18 @@ for (const authProvider of authProviders) {
 	router.use(`/login/${authProvider.name}`, authRouter);
 }
 
-if (!env['AUTH_DISABLE_DEFAULT']) {
-	router.use('/login', createLocalAuthRouter(DEFAULT_AUTH_PROVIDER));
-}
+// We always register the route, but check for the tenant-specific env var inside
+const localAuthRouter = createLocalAuthRouter(DEFAULT_AUTH_PROVIDER);
+
+router.use('/login', (req, res, next) => {
+	const env = useEnv();
+
+	if (env['AUTH_DISABLE_DEFAULT']) {
+		return next(new RouteNotFoundError({ path: req.path }));
+	}
+
+	return localAuthRouter(req, res, next);
+});
 
 function getCurrentMode(req: Request): AuthenticationMode {
 	if (req.body.mode) {
@@ -80,6 +88,8 @@ function getCurrentMode(req: Request): AuthenticationMode {
 }
 
 function getCurrentRefreshToken(req: Request, mode: AuthenticationMode): string | undefined {
+	const env = useEnv();
+
 	if (mode === 'json') {
 		return req.body.refresh_token;
 	}
@@ -103,6 +113,8 @@ function getCurrentRefreshToken(req: Request, mode: AuthenticationMode): string 
 router.post(
 	'/refresh',
 	asyncHandler(async (req, res, next) => {
+		const env = useEnv();
+
 		const accountability: Accountability = createDefaultAccountability({ ip: getIPFromReq(req) });
 
 		const userAgent = req.get('user-agent')?.substring(0, 1024);
@@ -137,12 +149,12 @@ router.post(
 		}
 
 		if (mode === 'cookie') {
-			res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, REFRESH_COOKIE_OPTIONS);
+			res.cookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, refreshToken, constants.REFRESH_COOKIE_OPTIONS);
 			payload.access_token = accessToken;
 		}
 
 		if (mode === 'session') {
-			res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, SESSION_COOKIE_OPTIONS);
+			res.cookie(env['SESSION_COOKIE_NAME'] as string, accessToken, constants.SESSION_COOKIE_OPTIONS);
 		}
 
 		res.locals['payload'] = { data: payload };
@@ -154,6 +166,8 @@ router.post(
 router.post(
 	'/logout',
 	asyncHandler(async (req, res, next) => {
+		const env = useEnv();
+
 		const accountability: Accountability = createDefaultAccountability({ ip: getIPFromReq(req) });
 
 		const userAgent = req.get('user-agent')?.substring(0, 1024);
@@ -179,11 +193,11 @@ router.post(
 		await authenticationService.logout(currentRefreshToken);
 
 		if (req.cookies[env['REFRESH_TOKEN_COOKIE_NAME'] as string]) {
-			res.clearCookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, REFRESH_COOKIE_OPTIONS);
+			res.clearCookie(env['REFRESH_TOKEN_COOKIE_NAME'] as string, constants.REFRESH_COOKIE_OPTIONS);
 		}
 
 		if (req.cookies[env['SESSION_COOKIE_NAME'] as string]) {
-			res.clearCookie(env['SESSION_COOKIE_NAME'] as string, SESSION_COOKIE_OPTIONS);
+			res.clearCookie(env['SESSION_COOKIE_NAME'] as string, constants.SESSION_COOKIE_OPTIONS);
 		}
 
 		return next();
@@ -252,6 +266,8 @@ router.post(
 router.get(
 	'/',
 	asyncHandler(async (req, res, next) => {
+		const env = useEnv();
+
 		const sessionOnly =
 			'sessionOnly' in req.query && (req.query['sessionOnly'] === '' || Boolean(req.query['sessionOnly']));
 
